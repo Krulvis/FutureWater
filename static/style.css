@@ -1,0 +1,138 @@
+/** User interface styles for the Trendy Lights app. */
+
+.template {
+    display: none;
+}
+
+/* Shared across all screen sizes. */
+
+html,
+body,
+.futurewater,
+.futurewater .map {
+    height: 100%;
+    margin: 0px;
+    padding: 0px;
+    overflow: hidden;
+}
+
+.futurewater .panel {
+    position: absolute;
+    z-index: 1;
+    background-color: white;
+    box-shadow: 0px 0px 20px black;
+    font-family: 'Roboto', sans-serif;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+.futurewater .settings {
+    top: 10px;
+}
+
+.futurewater .settings .bold{
+    font-weight: bold;
+}
+
+.futurewater .settings #error-message{
+    font-style: oblique;
+}
+
+.futurewater .results {
+    display: none;
+}
+
+.futurewater .results .error {
+    display: none;
+}
+
+.futurewater .results h2 {
+    margin: 0px;
+    padding-bottom: 30px;
+}
+
+.futurewater .results .details {
+    overflow: hidden;
+    max-height: 500px;
+}
+
+.futurewater .radio-inline {
+    padding-left: 25px;
+}
+
+/* Small screens. */
+
+@media (max-width: 900px) {
+    .futurewater .settings .logo {
+        top: 22px;
+        left: 30px;
+    }
+
+    .futurewater .panel {
+        width: 100%;
+        bottom: 0px;
+        height: 50px;
+    }
+
+    .futurewater .results .details {
+        visibility: hidden;
+        max-height: 400px;
+        padding-right: 10px;
+    }
+
+    .futurewater .results .close {
+        display: none;
+    }
+
+    .futurewater .results .toggler {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        cursor: pointer;
+    }
+
+    .futurewater .results.expanded .details {
+        visibility: visible;
+    }
+
+    .futurewater .results.expanded {
+        height: 278px;
+    }
+
+}
+
+/* Large screens. */
+
+@media (min-width: 900px) {
+    .futurewater .settings .logo {
+        top: 30px;
+    }
+
+    .futurewater .settings {
+        left: 20px;
+        width: 650px;
+        height: 100%;
+        opacity: .98;
+        border-radius: 4px;
+    }
+
+    .futurewater .results {
+        width: 400px;
+        left: 40px;
+        top: 126px;
+        padding: 14px;
+        opacity: .98;
+        border-radius: 4px;
+    }
+
+    .futurewater .results .close {
+        position: absolute;
+        top: 14px;
+        right: 14px;
+        cursor: pointer;
+    }
+
+    .futurewater .results .toggler {
+        display: none;
+    }
+}

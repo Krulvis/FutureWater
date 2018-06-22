@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Future Water Application</title>
+    <meta charset="utf-8">
+
+    <!-- Support for browsers on mobile phones. -->
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, user-scalable=no">
+
+    <!-- Google Web Fonts. -->
+    <link href='https://fonts.googleapis.com/css?family=Roboto+Condensed'
+          rel='stylesheet' type='text/css'>
+
+    <!-- The Google JavaScript loader tool (for the Maps, Charts APIs). -->
+    <script src="https://www.google.com/jsapi"></script>
+
+    <!-- Bootstrap CSS -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/smoothness/jquery-ui.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" crossorigin="anonymous"></script>
+
+    <!-- Custom CSS styles for our application. -->
+    <link rel="stylesheet" href="/static/style.css">
+
+    <!-- Our custom JavaScript for Earth Engine App. -->
+    <script src="/static/scripts/ee_api.js"></script>
+    <script src="/static/rainfall.js"></script>
+
+</head>
+<body>
+
+<!-- The DOM of our application. -->
+<div class="futurewater">
+
+    <!-- A container which the Maps API will populate with a map. -->
+    <div class="map"></div>
+
+    <div class="settings panel">
+        <!-- The title of the application. -->
+        <img class="logo" src="/static/img/logo.png">
+        <button type="button" class="btn btn-info" data-toggle="collapse" data-target="#information">Information
+        </button>
+        <div id="information" class="collapse">
+            Lorem ipsum dolor sit amet, consectetur adipisicing elit,
+            sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,
+            quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+        </div>
+        <form>
+            <div class="form-group">
+                <label class="bold" for="startDate">Start Date</label>
+                <input type="date" class="form-control datepicker" id="startDate" value="2017-01-01">
+            </div>
+            <div class="form-group">
+                <label class="bold" for="endDate">End Date</label>
+                <input type="date" class="form-control datepicker" id="endDate" value="2018-01-01">
+            </div>
+            <div class="form-group">
+                <label class="bold">Selection Style:</label>
+                <label class="radio-inline"><input value="country" id="country" checked type="radio" name="optradio">Select
+                    Country</label>
+                <label class="radio-inline"><input value="polygon" id="polygon" type="radio" name="optradio">Draw
+                    Polygon</label>
+            </div>
+            <div class="form-group">
+                <label class="bold" for="map-button">Map Overlay</label>
+                <input type="button" class="form-control" id="map-button" value="Create Overlay">
+            </div>
+            <div class="form-group">
+                <label class="bold" for="graph-button">Data Graph</label>
+                <input type="button" class="form-control" id="graph-button" value="Create Graph">
+            </div>
+        </form>
+        <p id="error-message"></p>
+    </div>
+
+    <!-- The panel to show details about a place. -->
+    <div class="results panel">
+
+        <!-- The button to toggle the panel expanded/collapsed. Mobile-only. -->
+        <div class="toggler">toggle</div>
+
+        <!-- The button to close the panel. Desktop-only. -->
+        <div class="close">close</div>
+
+        <!-- The title of the place for which details are being shown. -->
+        <h2 class="title"></h2>
+
+        <!-- A scrollable container for details about the polygon. -->
+        <div class="details">
+
+            <!-- A container which the Charts API will populate. -->
+            <div class="chart"></div>
+
+            <!-- The element to hold the error message. -->
+            <p class="error"></p>
+        </div>
+    </div>
+</div>
+
+<!-- Boot our JavaScript once the body has loaded. -->
+<script>
+    rainfall.boot(
+        '{{ key | safe }}');
+</script>
+
+</body>
+</html>
