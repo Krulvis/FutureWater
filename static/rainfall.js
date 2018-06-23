@@ -93,7 +93,6 @@ rainfall.App.prototype.addRainfall = function () {
         beforeSend: function () {
             button.attr('value', 'Loading...');
             rainfall.instance.clearOverlays();
-            rainfall.instance.map.overlayMapTypes.clear();
         },
         error: function (data) {
             button.attr('value', 'error');
@@ -240,6 +239,18 @@ rainfall.App.prototype.createDrawingManager = function () {
             this.finishedPolygon(event.overlay);
         }).bind(this));
 
+    /**
+     * Remove current polygon on right-click
+     */
+    google.maps.event.addListener(
+        drawingManager, 'rightclick',
+        (function (event) {
+            if (this.selectionMethod === 'polygon') {
+                this.removePolygons();
+                console.log('Hi there');
+            }
+        }).bind(this));
+
     return drawingManager;
 };
 
@@ -248,6 +259,7 @@ rainfall.App.prototype.createDrawingManager = function () {
  * @param opt_overlay Polygon
  */
 rainfall.App.prototype.finishedPolygon = function (polygon) {
+    this.removePolygons();
     this.targetRegion = polygon;
     this.polygons.push(polygon);
 };
@@ -270,6 +282,7 @@ rainfall.App.prototype.clearOverlays = function () {
     while (overlays[0]) {
         overlays.pop().setMap(null);
     }
+    this.map.overlayMapTypes.clear();
 };
 
 /**
@@ -309,6 +322,7 @@ rainfall.App.prototype.getTarget = function () {
     if (this.selectionMethod === 'country') {
         return this.targetRegion
     } else {
+        //Create GeoJSON importable by EE
         var dict = {
             "type": "Feature",
             "properties": {

@@ -85,7 +85,7 @@ class MainHandler(webapp2.RequestHandler):
             'key': config.KEY
         }
         template = JINJA2_ENVIRONMENT.get_template('index.html')
-        self.response.out.write(template.render())
+        self.response.out.write(template.render(template_values))
 
 
 class RainfallHandler(webapp2.RequestHandler):
