@@ -28,14 +28,39 @@ body,
 
 .futurewater .settings {
     top: 10px;
+    overflow: auto;
+    max-height: 98%;
 }
 
-.futurewater .settings .bold{
+.futurewater .settings .bold {
     font-weight: bold;
 }
 
-.futurewater .settings #error-message{
+.futurewater .settings #error-message {
     font-style: oblique;
+}
+
+.futurewater .settings .markers {
+    padding-top: 20px;
+}
+
+.futurewater .settings .markers .form-control {
+    max-width: 150px;
+}
+
+.futurewater .settings .markers-table {
+    max-width: 600px;
+    max-height: 200px;
+    overflow: auto;
+}
+
+.futurewater .settings .style-options {
+    display: none;
+    padding-top: 20px;
+}
+
+.hidden {
+    display: none;
 }
 
 .futurewater .results {

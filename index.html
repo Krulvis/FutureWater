@@ -15,18 +15,22 @@
     <!-- The Google JavaScript loader tool (for the Maps, Charts APIs). -->
     <script src="https://www.google.com/jsapi"></script>
 
-    <!-- Bootstrap CSS -->
+    <!-- JQuery CSS/JS -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
     <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/smoothness/jquery-ui.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
 
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" crossorigin="anonymous"></script>
+    <!-- Bootstrap CSS/JS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css">
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.bundle.min.js"
+            crossorigin="anonymous"></script>
 
     <!-- Custom CSS styles for our application. -->
     <link rel="stylesheet" href="/static/css/style.css">
 
     <!-- Our custom JavaScript for Earth Engine App. -->
+    <script src="/static/scripts/inputFile.js"></script>
+    <script src="/static/scripts/markers.js"></script>
     <script src="/static/scripts/rainfall.js"></script>
 
 </head>
@@ -49,6 +53,7 @@
             quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
         </div>
         <form>
+            <!-- DATES SELECTION -->
             <div class="form-group">
                 <label class="bold" for="startDate">Start Date</label>
                 <input type="date" class="form-control datepicker" id="startDate" value="2017-01-01">
@@ -57,18 +62,78 @@
                 <label class="bold" for="endDate">End Date</label>
                 <input type="date" class="form-control datepicker" id="endDate" value="2018-01-01">
             </div>
-            <div class="form-group">
-                <label class="bold">Selection Style:</label>
-                <label class="radio-inline"><input value="country" id="country" checked type="radio" name="optradio">Select
-                    Country</label>
-                <label class="radio-inline"><input value="polygon" id="polygon" type="radio" name="optradio">Draw
-                    Polygon</label>
+            <!-- STYLE SELECTION -->
+            <div class="dropdown selection-group">
+                <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Selection Style
+                    <span class="caret"></span></button>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                    <a class="dropdown-item selection-option" href="#">Coordinate</a>
+                    <a class="dropdown-item selection-option" href="#">Country</a>
+                    <a class="dropdown-item selection-option" href="#">Shapefile</a>
+                </div>
             </div>
-            <div class="form-group">
+            <!-- Country Options -->
+            <div class="country style-options">
+                <form class="form-inline">
+                    <div class="form-group row">
+                        <div class="col-sm-10">
+                            <input class="form-control" id="selected-country" type="text" value="selected country"
+                                   disabled>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <!-- ShapeFile Options -->
+            <div class="shapefile style-options">
+                <form class="form-group">
+                    <div class="input-group input-file">
+                        <input type="text" class="form-control" placeholder='Choose a file...'/>
+                        <span class="input-group-btn">
+                                <button class="btn btn-default btn-choose" type="button">Choose</button>
+                            </span>
+                    </div>
+                </form>
+            </div>
+            <!-- Markers Options-->
+            <div class="markers style-options">
+                <form class="form-inline">
+                    <div class="form-group row">
+                        <div class="col-md-3">
+                            <input type="text" class="form-control" id="lat" placeholder="Latitude">
+                        </div>
+                        <div class="col-md-3">
+                            <input type="text" class="form-control" id="lng" placeholder="Longitude">
+                        </div>
+                        <div class="col-md-3">
+                            <input type="text" class="form-control" id="title" placeholder="Title">
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-primary add-marker">Add Marker</button>
+                        </div>
+                    </div>
+                </form>
+                <div class="form-group markers-table">
+                    <table class="table table-striped">
+                        <thead>
+                        <tr>
+                            <th>Lat</th>
+                            <th>Lng</th>
+                            <th>Title</th>
+                            <th>Remove</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- Data Buttons -->
+            <div class="form-group overlay">
                 <label class="bold" for="map-button">Map Overlay</label>
                 <input type="button" class="form-control" id="map-button" value="Create Overlay">
             </div>
-            <div class="form-group">
+            <div class="form-group graph">
                 <label class="bold" for="graph-button">Data Graph</label>
                 <input type="button" class="form-control" id="graph-button" value="Create Graph">
             </div>

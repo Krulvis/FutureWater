@@ -10,23 +10,20 @@ rainfall.boot = function (key) {
     });
 };
 
-
 rainfall.App = function () {
     this.selectionMethod = 'country';
     this.map = this.createMap();
 
     // Used for analysis Selection
-    this.polygons = [];
     this.targetRegion = null;
-    this.drawingManager = this.createDrawingManager();
+    this.selectedCountry = null;
+    this.markers = [];
+
+    $(".results").draggable();
 
     //this.addCountries(countriesMapId, countriesToken);
     this.createCountries();
-    this.map.data.addListener('click', this.handleCountryClick.bind(this));
-
-    $(function () {
-        $(".results").draggable();
-    });
+    this.map.data.addListener('click', this.handleMapClick.bind(this));
 
     $('#map-button').on('click', function (event) {
         rainfall.instance.addRainfall();
@@ -39,10 +36,11 @@ rainfall.App = function () {
     // Register a click handler to hide the panel when the user clicks close.
     $('.results .close').click(this.hidePanel.bind(this));
 
-    /**
-     * Respond to radio button clicks (switching input style)
-     */
-    $('.radio-inline').on('click', this.switchStyle.bind(this));
+    //Respond to radio button clicks (switching input style)
+    $('.selection-option').on('click', this.switchStyle.bind(this));
+
+    //Adds a marker for given input
+    $('.add-marker').on('click', markers.addMarkerFromForm.bind(this))
 };
 
 /**
@@ -136,7 +134,7 @@ rainfall.App.prototype.addGraph = function () {
             $('#error-message').show().html(data['error']);
         } else {
             $('.results').show();
-            var title = this.selectionMethod === 'country' ? this.targetRegion : 'Polygon';
+            var title = this.selectionMethod === 'country' ? this.selectedCountry.getProperty('title') : 'Polygon';
             $('.results .title').show().text(title);
             button.attr('value', rainfall.App.GRAPH_BASE_BUTTON_NAME);
             console.log(data);
@@ -145,6 +143,10 @@ rainfall.App.prototype.addGraph = function () {
     }).bind(this));
 };
 
+/**
+ * Returns true if anything is selected
+ * @returns {boolean}
+ */
 rainfall.App.prototype.checkRegion = function () {
     if (this.targetRegion === null) {
         $('#error-message').show().html('Select a Country or draw a Polygon first!');
@@ -159,14 +161,17 @@ rainfall.App.prototype.checkRegion = function () {
  * Handle Country Click
  * @param event
  */
-rainfall.App.prototype.handleCountryClick = function (event) {
+rainfall.App.prototype.handleMapClick = function (event) {
     if (this.selectionMethod === 'country') {
         var feature = event.feature;
         var name = feature.getProperty('name');
         console.log('Clicked: ' + name);
-        this.targetRegion = name;
+        this.selectedCountry = feature;
         this.map.data.revertStyle();
         this.map.data.overrideStyle(feature, rainfall.App.SELECTED_STYLE);
+        $('#selected-country').val(name);
+    } else if (this.selectionMethod === 'coordinate') {
+        markers.addMarkerFromClick(event);
     }
 };
 
@@ -215,64 +220,6 @@ rainfall.App.prototype.addOverlay = function (eeMapId, eeToken) {
     this.map.overlayMapTypes.push(overlay);
 };
 
-/**
- * Drawing manager for drawing polygons on the map
- * @returns {google.maps.drawing.DrawingManager}
- */
-rainfall.App.prototype.createDrawingManager = function () {
-    var drawingManagerOptions = {
-        drawingControl: false,
-        drawingMode: google.maps.drawing.OverlayType.POLYGON,
-        polygonOptions: {
-            fillColor: '#2c3e50',
-            strokeColor: '#2c3e50'
-        }
-    };
-    var drawingManager = new google.maps.drawing.DrawingManager(drawingManagerOptions);
-
-    /**
-     * Add to google maps for completion listener
-     */
-    google.maps.event.addListener(
-        drawingManager, 'overlaycomplete',
-        (function (event) {
-            this.finishedPolygon(event.overlay);
-        }).bind(this));
-
-    /**
-     * Remove current polygon on right-click
-     */
-    google.maps.event.addListener(
-        drawingManager, 'rightclick',
-        (function (event) {
-            if (this.selectionMethod === 'polygon') {
-                this.removePolygons();
-                console.log('Hi there');
-            }
-        }).bind(this));
-
-    return drawingManager;
-};
-
-/**
- * Called when overlay is complete, Polygon is finished
- * @param opt_overlay Polygon
- */
-rainfall.App.prototype.finishedPolygon = function (polygon) {
-    this.removePolygons();
-    this.targetRegion = polygon;
-    this.polygons.push(polygon);
-};
-
-/**
- * Remove all placed polygons
- */
-rainfall.App.prototype.removePolygons = function () {
-    console.log('Removing polygons');
-    this.polygons.forEach(function (polygon) {
-        polygon.setMap(null);
-    });
-};
 
 /**
  * Removes previously added Overlay Map Types (Used to remove Map Overlay Rainfall)
@@ -297,21 +244,46 @@ rainfall.App.prototype.hidePanel = function () {
  * @param event
  */
 rainfall.App.prototype.switchStyle = function (event) {
-    var style = $('input[type=radio]:checked');
-    console.log(style.val());
-    this.selectionMethod = style.val();
-    this.targetRegion = null;
+    var style = $(event.target).html();
+    console.log(style);
+    this.selectionMethod = style.toLowerCase();
+    $('.selection-group button').html(style);
+    /*
+    Reset buttons
+     */
     this.clearOverlays();
     $('#map-button').attr('value', rainfall.App.OVERLAY_BASE_BUTTON_NAME);
     $('#graph-button').attr('value', rainfall.App.GRAPH_BASE_BUTTON_NAME);
-    if (style.val() === 'polygon') {
+
+    /*
+    Change settings
+     */
+    if (this.selectionMethod === 'coordinate') {
+        $('.shapefile').hide();
+        $('.country').hide();
+        $('.markers').show();
+        $('.overlay').hide();
         this.map.data.revertStyle();
-        this.drawingManager.setMap(this.map);
-        this.drawingManager.setDrawingMode(google.maps.drawing.OverlayType.POLYGON);
-    } else {
-        this.removePolygons();
-        this.drawingManager.setMap(null);
-        this.drawingManager.setDrawingMode(null);
+        markers.draw(true);
+
+    } else if (this.selectionMethod === 'country') {
+        $('.markers').hide();
+        $('.shapefile').hide();
+        $('.country').show();
+        $('.overlay').show();
+        this.map.data.revertStyle();
+        markers.draw(false);
+        if (this.selectedCountry != null) {
+            this.map.data.overrideStyle(this.selectedCountry, rainfall.App.SELECTED_STYLE);
+        }
+
+    } else if (this.selectionMethod === 'shapefile') {
+        $('.markers').hide();
+        $('.country').hide();
+        $('.shapefile').show();
+        $('.overlay').show();
+        this.map.data.revertStyle();
+        markers.draw(false);
     }
 };
 
@@ -320,32 +292,13 @@ rainfall.App.prototype.switchStyle = function (event) {
  */
 rainfall.App.prototype.getTarget = function () {
     if (this.selectionMethod === 'country') {
-        return this.targetRegion
+        return this.selectedCountry;
+    } else if (this.selectionMethod === 'shapefile') {
+
+    } else if (this.selectionMethod === 'coordinate') {
+        return markers.getJSON();
     } else {
-        //Create GeoJSON importable by EE
-        var dict = {
-            "type": "Feature",
-            "properties": {
-                "title": "Polygon",
-                "id": "polygon"
-            },
-            "geometry": {
-                "type": "Polygon",
-                "coordinates": []
-            }
-        };
-        var mutliCoords = [];
-        this.targetRegion.getPaths().forEach(function (path) {
-            var coords = [];
-            path.getArray().forEach(function (coordinate) {
-                var coord = [coordinate.lng(), coordinate.lat()];
-                coords.push(coord);
-            });
-            mutliCoords.push(coords);
-        });
-        dict.geometry.coordinates = mutliCoords;
-        console.log(dict);
-        return JSON.stringify(dict, null, 2)
+        $('#error-message').show().html('Please select a method of targeting first!');
     }
 };
 
