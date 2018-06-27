@@ -28,7 +28,8 @@ body,
 
 .futurewater .settings {
     top: 10px;
-    overflow: auto;
+    overflow-y: auto;
+    overflow-x: hidden;
     max-height: 98%;
 }
 
@@ -40,7 +41,7 @@ body,
     font-style: oblique;
 }
 
-.futurewater .settings .markers {
+.futurewater .settings .tab-content {
     padding-top: 20px;
 }
 
@@ -49,7 +50,6 @@ body,
 }
 
 .futurewater .settings .markers-table {
-    max-width: 600px;
     max-height: 200px;
     overflow: auto;
 }
@@ -136,7 +136,7 @@ body,
     .futurewater .settings {
         left: 20px;
         width: 650px;
-        height: 100%;
+        /*height: 98%;*/
         opacity: .98;
         border-radius: 4px;
     }

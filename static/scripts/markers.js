@@ -5,11 +5,11 @@ $(function () {
         var tr = $(this).closest('tr');
         var title = tr.find('.title').html();
         console.log('Removing Marker: ' + title);
-        var markers = rainfall.instance.markers;
+        var markers = precipitation.instance.markers;
         markers.forEach(function (marker) {
             if (marker.getTitle() === title) {
                 marker.setMap(null);
-                rainfall.instance.markers.splice(marker.index, 1);
+                precipitation.instance.markers.splice(marker.index, 1);
             }
         });
         tr.remove();
@@ -22,12 +22,12 @@ $(function () {
  */
 markers.draw = function (draw) {
     if (draw) {
-        var map = rainfall.instance.map;
-        rainfall.instance.markers.forEach(function (marker) {
+        var map = precipitation.instance.map;
+        precipitation.instance.markers.forEach(function (marker) {
             marker.setMap(map);
         });
     } else {
-        rainfall.instance.markers.forEach(function (marker) {
+        precipitation.instance.markers.forEach(function (marker) {
             marker.setMap(null);
         });
     }
@@ -51,8 +51,8 @@ markers.addMarkerFromForm = function () {
     var lat = $('#lat').val();
     var lng = $('#lng').val();
     var title = $('#title').val();
-    if (lat === 'Latitude' || lng === 'Longitude') {
-        $('#error-message').show().html('Please enter a valid Latitude or Longitude');
+    if (lat === '' || lng === '' || title === '') {
+        $('#error-message').show().html('Please enter a valid Latitude, Longitude and Title');
     } else {
         $('#error-message').hide();
         markers.addMarker(lat, lng, title);
@@ -67,10 +67,10 @@ markers.addMarker = function (lat, lng, title) {
     var position = new google.maps.LatLng(lat, lng);
     var marker = new google.maps.Marker({
         position: position,
-        map: rainfall.instance.map,
+        map: precipitation.instance.map,
         title: title
     });
-    rainfall.instance.markers.push(marker);
+    precipitation.instance.markers.push(marker);
     console.log('Added marker: ' + marker.getTitle());
     var tableContent = '<tr><td>' + lat + '</td><td>' + lng + '</td><td class="title">' + title + '</td><td><button class="btn btn-danger remove-marker">Remove</button></td></tr>';
     $('.markers-table tbody').append(tableContent);
@@ -81,7 +81,7 @@ markers.addMarker = function (lat, lng, title) {
  */
 markers.getJSON = function () {
     var data = {'FeatureCollection': []};
-    rainfall.instance.markers.forEach(function (marker) {
+    precipitation.instance.markers.forEach(function (marker) {
         var temp = markers.TEMPLATE;
         temp.properties.title = marker.getTitle();
         var position = marker.getPosition();

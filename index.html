@@ -24,14 +24,17 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css">
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.bundle.min.js"
             crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.1.0/css/all.css"
+          integrity="sha384-lKuwvrZot6UHsBSfcMvOkWwlCMgc0TaWr+30HWe3a4ltaBwTZhyTEggF5tJv8tbt" crossorigin="anonymous">
 
     <!-- Custom CSS styles for our application. -->
     <link rel="stylesheet" href="/static/css/style.css">
 
     <!-- Our custom JavaScript for Earth Engine App. -->
-    <script src="/static/scripts/inputFile.js"></script>
     <script src="/static/scripts/markers.js"></script>
-    <script src="/static/scripts/rainfall.js"></script>
+    <script src="/static/scripts/products.js"></script>
+    <script src="/static/scripts/precipitation.js"></script>
+    <script src="/static/scripts/inputFile.js"></script>
 
 </head>
 <body>
@@ -52,7 +55,7 @@
             sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,
             quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
         </div>
-        <form>
+        <form class="settings-form">
             <!-- DATES SELECTION -->
             <div class="form-group">
                 <label class="bold" for="startDate">Start Date</label>
@@ -63,82 +66,90 @@
                 <input type="date" class="form-control datepicker" id="endDate" value="2018-01-01">
             </div>
             <!-- STYLE SELECTION -->
-            <div class="dropdown selection-group">
-                <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Selection Style
-                    <span class="caret"></span></button>
-                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                    <a class="dropdown-item selection-option" href="#">Coordinate</a>
-                    <a class="dropdown-item selection-option" href="#">Country</a>
-                    <a class="dropdown-item selection-option" href="#">Shapefile</a>
-                </div>
-            </div>
-            <!-- Country Options -->
-            <div class="country style-options">
-                <form class="form-inline">
-                    <div class="form-group row">
-                        <div class="col-sm-10">
-                            <input class="form-control" id="selected-country" type="text" value="selected country"
-                                   disabled>
-                        </div>
+            <div class="style-container">
+                <ul class="nav nav-tabs nav-justified">
+                    <li class="nav-item"><a class="nav-link active show" data-toggle="tab" href="#country"><i
+                            class="fas fa-globe-americas fa-lg fa-pull-left"></i>Country</a></li>
+                    <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#shapefile"><i
+                            class="fas fa-file fa-lg fa-pull-left"></i>Shapefile</a></li>
+                    <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#coordinate"><i
+                            class="fas fa-map-marker-alt fa-lg fa-pull-left"></i>Coordinate</a>
+                    </li>
+                </ul>
+                <div class="tab-content">
+                    <!-- Country Options -->
+                    <div id="country" class="tab-pane fade in active show">
+                        <input class="form-control" id="selected-country" type="text"
+                               placeholder="Search for country...">
                     </div>
-                </form>
-            </div>
-            <!-- ShapeFile Options -->
-            <div class="shapefile style-options">
-                <form class="form-group">
-                    <div class="input-group input-file">
-                        <input type="text" class="form-control" placeholder='Choose a file...'/>
-                        <span class="input-group-btn">
+                    <!-- ShapeFile Options -->
+                    <div id="shapefile" class="tab-pane fade">
+                        <div class="input-group input-file">
+                            <input type="text" class="form-control" placeholder='Choose a file...'/>
+                            <span class="input-group-btn">
                                 <button class="btn btn-default btn-choose" type="button">Choose</button>
                             </span>
-                    </div>
-                </form>
-            </div>
-            <!-- Markers Options-->
-            <div class="markers style-options">
-                <form class="form-inline">
-                    <div class="form-group row">
-                        <div class="col-md-3">
-                            <input type="text" class="form-control" id="lat" placeholder="Latitude">
-                        </div>
-                        <div class="col-md-3">
-                            <input type="text" class="form-control" id="lng" placeholder="Longitude">
-                        </div>
-                        <div class="col-md-3">
-                            <input type="text" class="form-control" id="title" placeholder="Title">
-                        </div>
-                        <div class="col-md-3">
-                            <button class="btn btn-primary add-marker">Add Marker</button>
                         </div>
                     </div>
-                </form>
-                <div class="form-group markers-table">
-                    <table class="table table-striped">
-                        <thead>
-                        <tr>
-                            <th>Lat</th>
-                            <th>Lng</th>
-                            <th>Title</th>
-                            <th>Remove</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-
-                        </tbody>
-                    </table>
+                    <!-- Markers Options-->
+                    <div id="coordinate" class="tab-pane fade">
+                        <div class="form-group row">
+                            <div class="col-md-3">
+                                <input type="text" class="form-control" id="lat" placeholder="Latitude">
+                            </div>
+                            <div class="col-md-3">
+                                <input type="text" class="form-control" id="lng" placeholder="Longitude">
+                            </div>
+                            <div class="col-md-3">
+                                <input type="text" class="form-control" id="title" placeholder="Title">
+                            </div>
+                            <div class="col-md-3">
+                                <button class="btn btn-primary add-marker" onclick="return false;">Add Marker</button>
+                            </div>
+                        </div>
+                        <div class="form-group markers-table table-responsive table-sm">
+                            <table class="table table-striped">
+                                <thead>
+                                <tr>
+                                    <th>Lat</th>
+                                    <th>Lng</th>
+                                    <th>Title</th>
+                                    <th>Remove</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
+            <p id="error-message"></p>
+            <hr>
             <!-- Data Buttons -->
-            <div class="form-group overlay">
-                <label class="bold" for="map-button">Map Overlay</label>
-                <input type="button" class="form-control" id="map-button" value="Create Overlay">
-            </div>
-            <div class="form-group graph">
-                <label class="bold" for="graph-button">Data Graph</label>
-                <input type="button" class="form-control" id="graph-button" value="Create Graph">
+            <div class="create-buttons pull-down">
+                <ul class="nav nav-pills nav-justified">
+                    <li class="nav-item"><a id="graph-tab" class="nav-link" data-toggle="tab" href="#graph"><i
+                            class="fas fa-chart-area fa-lg fa-pull-left"></i>Graph</a></li>
+                    <li class="nav-item"><a id="overlay-tab" class="nav-link" data-toggle="tab" href="#overlay"><i
+                            class="fas fa-map fa-lg fa-pull-left"></i>Overlay</a></li>
+                </ul>
+                <div class="tab-content">
+                    <!-- Country Options -->
+                    <div id="graph" class="tab-pane fade">
+                        <button class="btn btn-success form-control" onclick="return false;" id="graph-button">Create
+                            Graph
+                        </button>
+                    </div>
+                    <div id="overlay" class="tab-pane fade">
+                        <button class="btn btn-success form-control" onclick="return false;" id="overlay-button">Create
+                            Overlay
+                        </button>
+                    </div>
+                </div>
             </div>
         </form>
-        <p id="error-message"></p>
+
     </div>
 
     <!-- The panel to show details about a place. -->
@@ -167,8 +178,9 @@
 
 <!-- Boot our JavaScript once the body has loaded. -->
 <script>
-    rainfall.boot(
+    precipitation.boot(
         '{{ key | safe }}');
+
 </script>
 
 </body>

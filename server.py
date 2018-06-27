@@ -88,7 +88,7 @@ class MainHandler(webapp2.RequestHandler):
         self.response.out.write(template.render(template_values))
 
 
-class RainfallHandler(webapp2.RequestHandler):
+class OverlayHandler(webapp2.RequestHandler):
 
     def get(self):
         start_date = self.request.get('startDate')
@@ -96,12 +96,12 @@ class RainfallHandler(webapp2.RequestHandler):
         target = self.request.get('target')
         style = self.request.get('style')
         if style == 'country':
-            region = GetCountryFeature(target)
+            feature = GetCountryFeature(target)
         else:
             json_data = json.loads(target)
             print(json_data)
-            region = ee.Feature(json_data)
-        data = GetRainMapID(start_date, end_date, region)
+            feature = ee.Feature(json_data)
+        data = GetRainMapID(start_date, end_date, feature)
         values = {
             'mapid': data['mapid'],
             'token': data['token']
@@ -109,7 +109,7 @@ class RainfallHandler(webapp2.RequestHandler):
         self.response.out.write(json.dumps(values))
 
 
-class CountriesHandler(webapp2.RequestHandler):
+class GraphHandler(webapp2.RequestHandler):
 
     def get(self):
         start_date = self.request.get('startDate')
@@ -123,8 +123,8 @@ class CountriesHandler(webapp2.RequestHandler):
 
 # http://webapp-improved.appspot.com/tutorials/quickstart.html
 app = webapp2.WSGIApplication([
-    ('/rainfall', RainfallHandler),
-    ('/countries', CountriesHandler),
+    ('/overlay', OverlayHandler),
+    ('/graph', GraphHandler),
     ('/', MainHandler),
 ])
 
@@ -190,7 +190,6 @@ def ComputeMonthlyTimeSeries(start_date, end_date, region, method):
             'value': img.values().get(0)
         })
 
-    urlfetch.set_default_fetch_deadline(59)
     chart_data = months.map(CalculateForMonth).getInfo()
 
     def ExtractMean(feature):
@@ -238,7 +237,7 @@ def GetCountryFeature(country):
         data = json.load(f)
         countries = [ee.Feature(k) for k in data["features"]]
         collections = ee.FeatureCollection(countries)
-        return collections.filterMetadata('name', 'equals', country)
+        return collections.filterMetadata('Country', 'equals', country)
 
 
 def GetRainMapID(start_date, end_date, region):
@@ -260,7 +259,7 @@ def GetRainMapID(start_date, end_date, region):
 # https://cloud.google.com/appengine/docs/python/memcache/
 MEMCACHE_EXPIRATION = 60 * 60 * 24
 
-COUNTRIES_PATH = 'static/polygons/countries.json'
+COUNTRIES_PATH = 'static/polygons/countries2.json'
 
 ###############################################################################
 #                               Initialization.                               #
@@ -280,16 +279,17 @@ JINJA2_ENVIRONMENT = jinja2.Environment(
 
 # Initialize the EE API.
 ee.Initialize(EE_CREDENTIALS)
-urlfetch.set_default_fetch_deadline(59)
+urlfetch.set_default_fetch_deadline(80)
 
 
 ###############################################################################
 #                               Building the ImageCollections.                #
 ###############################################################################
+COUNTRIES = ee.FeatureCollection('ft:1tdSwUL7MVpOauSgRzqVTOwdfy17KDbw-1d9omPw')
+
 
 def Multiply(i, value):
     return i.multiply(value).copyProperties(i, ['system:time_start'])
-
 
 TRMM = ee.ImageCollection('TRMM/3B42').select('precipitation').map(
     lambda i: Multiply(i, 3))
