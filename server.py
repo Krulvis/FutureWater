@@ -94,14 +94,18 @@ class OverlayHandler(webapp2.RequestHandler):
         start_date = self.request.get('startDate')
         end_date = self.request.get('endDate')
         target = self.request.get('target')
-        style = self.request.get('style')
-        if style == 'country':
+        product = self.request.get('product')
+        calculation = self.request.get('calculation')
+        method = self.request.get('method')
+
+        if method == 'country':
             feature = GetCountryFeature(target)
         else:
             json_data = json.loads(target)
             print(json_data)
             feature = ee.Feature(json_data)
-        data = GetRainMapID(start_date, end_date, feature)
+
+        data = GetRainMapID(start_date, end_date, feature, product, calculation)
         values = {
             'mapid': data['mapid'],
             'token': data['token']
@@ -156,7 +160,7 @@ def GetMonthlySeries(start_date, end_date, target, style):
     # Try building json dict for each method
     try:
         print('NOT CACHE:')
-        for method in METHODS:
+        for method in PRODUCTS:
             details[method['name']] = ComputeMonthlyTimeSeries(start_date, end_date, region, method)
         print(details)
         graph = OrderForGraph(details)
@@ -231,20 +235,29 @@ def GetCountryFeature(country):
     """Returns an ee.Feature for the polygon with the given ID."""
     # Note: The polygon IDs are read from the filesystem in the initialization
     # section below. "sample-id" corresponds to "static/polygons/sample-id.json".
-    path = COUNTRIES_PATH
-    path = os.path.join(os.path.split(__file__)[0], path)
-    with open(path) as f:
-        data = json.load(f)
-        countries = [ee.Feature(k) for k in data["features"]]
-        collections = ee.FeatureCollection(countries)
-        return collections.filterMetadata('Country', 'equals', country)
+    return COUNTRIES.filter(ee.Filter.inList('Country', [country])).geometry().dissolve()
+    # path = COUNTRIES_PATH
+    # path = os.path.join(os.path.split(__file__)[0], path)
+    # with open(path) as f:
+    #     data = json.load(f)
+    #     countries = [ee.Feature(k) for k in data["features"]]
+    #     collections = ee.FeatureCollection(countries)
+    #     return collections.filterMetadata('Country', 'equals', country)
 
 
-def GetRainMapID(start_date, end_date, region):
+def GetRainMapID(start_date, end_date, region, product_name, calculation):
     """Map for displaying summed up images of specified measurement"""
     start_date = ee.Date(start_date)
     end_date = ee.Date(end_date)
-    data = TRMM.filterDate(start_date, end_date).sort('system:time_start', False).sum().clip(region)
+    product = PRODUCTS[0]
+    for p in PRODUCTS:
+        if p['name'] == product_name:
+            product = p
+    data = product['collection'].filterDate(start_date, end_date)
+    if calculation == 'sum':
+        data = data.sum().clip(region)
+    if calculation == 'mean':
+        data = data.mean().clip(region)
     data = data.visualize(min=800, max=2000, palette='000000, 0000FF, FDFF92, FF2700, FF00E7')
     return data.getMapId()
 
@@ -281,7 +294,6 @@ JINJA2_ENVIRONMENT = jinja2.Environment(
 ee.Initialize(EE_CREDENTIALS)
 urlfetch.set_default_fetch_deadline(80)
 
-
 ###############################################################################
 #                               Building the ImageCollections.                #
 ###############################################################################
@@ -290,6 +302,7 @@ COUNTRIES = ee.FeatureCollection('ft:1tdSwUL7MVpOauSgRzqVTOwdfy17KDbw-1d9omPw')
 
 def Multiply(i, value):
     return i.multiply(value).copyProperties(i, ['system:time_start'])
+
 
 TRMM = ee.ImageCollection('TRMM/3B42').select('precipitation').map(
     lambda i: Multiply(i, 3))
@@ -300,7 +313,7 @@ CFSV2 = ee.ImageCollection('NOAA/CFSV2/FOR6H').select('Precipitation_rate_surfac
 GLDAS = ee.ImageCollection('NASA/GLDAS/V021/NOAH/G025/T3H').select('Rainf_tavg').map(
     lambda i: Multiply(i, 60 * 60 * 3))
 
-METHODS = [
+PRODUCTS = [
     {
         'name': 'CHIRPS',
         'collection': CHIRPS,

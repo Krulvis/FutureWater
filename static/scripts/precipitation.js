@@ -59,6 +59,7 @@ precipitation.App.prototype.initVals = function () {
     this.markers = [];
     this.selectionMethod = 'country';
     products.resetRadios();
+    calculations.resetRadios();
 };
 
 /**
@@ -100,14 +101,15 @@ precipitation.App.prototype.getOverlay = function () {
     var startDate = $('#startDate').val();
     var endDate = $('#endDate').val();
     var button = $('#overlay-button');
+    var overlay = $('#overlay');
     if (!this.checkRegion()) {
         return;
     }
     $.ajax({
-        url: '/overlay?startDate=' + startDate + '&endDate=' + endDate + '&style=' + this.selectionMethod + '&product=' + this.getProduct() + '&target=' + this.getTarget(),
+        url: '/overlay?startDate=' + startDate + '&endDate=' + endDate + '&method=' + this.selectionMethod + '&product=' + this.getProduct(overlay) + '&calculation=' + this.getCalculation(overlay) + '&target=' + this.getTarget(),
         method: 'GET',
         beforeSend: function () {
-            button.attr('value', 'Loading...');
+            button.html('Loading...');
             precipitation.instance.clearOverlays();
         },
         error: function (data) {
@@ -134,11 +136,12 @@ precipitation.App.prototype.getGraph = function () {
     var startDate = $('#startDate').val();
     var endDate = $('#endDate').val();
     var button = $('#graph-button');
+    var graph = $('#graph');
     if (!this.checkRegion()) {
         return;
     }
     $.ajax({
-        url: '/graph?startDate=' + startDate + '&endDate=' + endDate + '&style=' + this.selectionMethod + '&product=' + this.getProduct() + '&target=' + this.getTarget(),
+        url: '/graph?startDate=' + startDate + '&endDate=' + endDate + '&method=' + this.selectionMethod + '&product=' + this.getProduct(graph) + '&calculation=' + this.getCalculation(graph) + '&target=' + this.getTarget(),
         method: 'GET',
         beforeSend: function () {
             button.attr('value', 'Loading...');
@@ -302,8 +305,8 @@ precipitation.App.prototype.switchStyle = function (event) {
     Reset buttons
      */
     this.clearOverlays();
-    $('#overlay-button').attr('value', precipitation.App.OVERLAY_BASE_BUTTON_NAME);
-    $('#graph-button').attr('value', precipitation.App.GRAPH_BASE_BUTTON_NAME);
+    $('#overlay-button').html(precipitation.App.OVERLAY_BASE_BUTTON_NAME);
+    $('#graph-button').html(precipitation.App.GRAPH_BASE_BUTTON_NAME);
 
     var overlayTab = $('#overlay-tab');
     var graphTab = $('#graph-tab');
@@ -332,14 +335,37 @@ precipitation.App.prototype.switchStyle = function (event) {
             break;
     }
     products.resetRadios();
+    calculations.resetRadios();
 };
 
 /**
  * Returns the selected Analysing Method
- * @returns {jQuery}
+ * @returns {string}
  */
-precipitation.App.prototype.getProduct = function () {
-    return $('#overlay input:radio:checked').attr('id');
+precipitation.App.prototype.getProduct = function (element) {
+    var container = element.find('.products-container');
+    if (container.length === 0) {
+        return 'null';
+    } else {
+        var id = container.find('input:radio:checked').attr('id');
+        console.log('id: ' + id);
+        return id.toUpperCase();
+    }
+};
+
+/**
+ * Returns the selected Analysing Method
+ * @returns {string}
+ */
+precipitation.App.prototype.getCalculation = function (element) {
+    var container = element.find('.calculations-container');
+    if (container.length === 0) {
+        return 'null';
+    } else {
+        var id = container.find('input:radio:checked').attr('id');
+        console.log('id: ' + id);
+        return id.toLowerCase();
+    }
 };
 
 /**

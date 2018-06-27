@@ -8,6 +8,7 @@ products.resetRadios = function () {
 
     switch (precipitation.instance.selectionMethod) {
         case 'country':
+            //Overlay
             this.addTo(overlayContent);
             this.removeFrom(graphContent);
             break;
@@ -24,7 +25,7 @@ products.resetRadios = function () {
 
 products.addTo = function (element) {
     if (element.find('.products-container').length === 0) {
-        element.prepend(products.products);
+        element.prepend(products.html);
     }
 };
 
@@ -32,7 +33,7 @@ products.removeFrom = function (element) {
     element.find('.products-container').remove();
 };
 
-products.products = '<div class="products-container form-group">\n' +
+products.html = '<div class="products-container form-group">\n' +
     '                            <label class="bold" for="products">Choose Product</label>\n' +
     '                            <div id="products">\n' +
     '                                <div class="custom-control custom-radio custom-control-inline">\n' +
