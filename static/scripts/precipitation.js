@@ -107,11 +107,13 @@ precipitation.App.prototype.getOverlay = function () {
     var endDate = $('#endDate').val();
     var button = $('#overlay-button');
     var overlay = $('#overlay');
-    if (!this.checkRegion()) {
+    var product = this.getProduct(overlay);
+    var calculation = this.getCalculation(overlay);
+    if (!this.checkRegion(false, product, calculation)) {
         return;
     }
     $.ajax({
-        url: '/overlay?startDate=' + startDate + '&endDate=' + endDate + '&method=' + this.selectionMethod + '&product=' + this.getProduct(overlay) + '&calculation=' + this.getCalculation(overlay) + '&target=' + this.getTarget(),
+        url: '/overlay?startDate=' + startDate + '&endDate=' + endDate + '&method=' + this.selectionMethod + '&product=' + product + '&calculation=' + calculation + '&target=' + this.getTarget(),
         method: 'GET',
         beforeSend: function () {
             button.html('Loading...');
@@ -142,11 +144,13 @@ precipitation.App.prototype.getGraph = function () {
     var endDate = $('#endDate').val();
     var button = $('#graph-button');
     var graph = $('#graph');
-    if (!this.checkRegion()) {
+    var product = this.getProduct(graph);
+    var calculation = this.getCalculation(graph);
+    if (!this.checkRegion(true, product, calculation)) {
         return;
     }
     $.ajax({
-        url: '/graph?startDate=' + startDate + '&endDate=' + endDate + '&method=' + this.selectionMethod + '&product=' + this.getProduct(graph) + '&calculation=' + this.getCalculation(graph) + '&target=' + this.getTarget(),
+        url: '/graph?startDate=' + startDate + '&endDate=' + endDate + '&method=' + this.selectionMethod + '&product=' + product + '&calculation=' + calculation + '&target=' + this.getTarget(),
         method: 'GET',
         beforeSend: function () {
             button.html('Loading...');
@@ -172,7 +176,7 @@ precipitation.App.prototype.getGraph = function () {
  * Returns true if anything is selected
  * @returns {boolean}
  */
-precipitation.App.prototype.checkRegion = function () {
+precipitation.App.prototype.checkRegion = function (graph, product, calculation) {
     var error = $('#error-message');
     error.show().html('');
     switch (this.selectionMethod) {
@@ -180,12 +184,19 @@ precipitation.App.prototype.checkRegion = function () {
             if (this.selectedCountry === null) {
                 error.show().html('Select a Country first!');
                 return false;
+            } else if (!graph && (calculation === 'null' || product === 'null')) {
+                error.show().html('Select a calculation and product first!')
             }
             break;
         case 'coordinate':
-
-            return true;
-
+            if (this.markers.length === 0) {
+                error.show().html('Create a Marker first (or click on map)!');
+                return false;
+            } else if (graph && product === 'null') {
+                error.show().html('Select a product first!');
+                return false;
+            }
+            break;
         case 'shapefile':
             break;
     }
@@ -242,7 +253,7 @@ precipitation.App.prototype.showChart = function () {
         chartType: 'LineChart',
         dataTable: data,
         options: {
-            title: 'Rainfall Over Time',
+            title: 'Precipitation',
             //curveType: 'function',
             legend: {position: 'none'},
             titleTextStyle: {fontName: 'Roboto'}
