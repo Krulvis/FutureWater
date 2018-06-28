@@ -63,6 +63,7 @@ precipitation.App.prototype.initVals = function () {
     this.markers = [];
     this.selectionMethod = 'country';
     this.chartData = null;
+    this.chartTitle = 'Chart';
     products.resetRadios();
     calculations.resetRadios();
 };
@@ -162,9 +163,8 @@ precipitation.App.prototype.getGraph = function () {
         if (data['error']) {
             $('#error-message').show().html(data['error']);
         } else {
-            var title = this.selectionMethod === 'country' ? this.selectedCountry.getProperty('title') : this.selectionMethod === 'coordinate' ? 'Markers' : 'ShapeFile';
-            $('.results .title').show().text(title);
             button.html(precipitation.App.GRAPH_BASE_BUTTON_NAME);
+            this.chartTitle = this.selectionMethod === 'country' ? this.selectedCountry.getProperty('Country') : this.selectionMethod === 'coordinate' ? 'Markers' : 'ShapeFile';
             console.log(data);
             this.chartData = data;
             this.showChart();
@@ -248,6 +248,7 @@ precipitation.App.prototype.handleCountryUIClick = function (event, ui) {
  */
 precipitation.App.prototype.showChart = function () {
     $('.results').show();
+    $('.results .title').show().text(this.chartTitle);
     var data = google.visualization.arrayToDataTable(this.chartData);
     var wrapper = new google.visualization.ChartWrapper({
         chartType: 'LineChart',

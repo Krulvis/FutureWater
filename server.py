@@ -61,6 +61,8 @@ requests more quickly.
 
 import json
 import os
+import sys
+from httplib import HTTPException
 
 import jinja2
 import webapp2
@@ -191,13 +193,15 @@ def GetPointsLineSeries(start_date, end_date, product, point_features):
         json_data = json.dumps(graph)
         # Store the results in memcache.
         memcache.add(cache_title, json_data, MEMCACHE_EXPIRATION)
-    except (ee.EEException, webapp2.HTTPException) as e:
+    except (ee.EEException, HTTPException):
         # Handle exceptions from the EE client library.
-        print('Error getting graph data')
-        details['error'] = str(e)
-        print(details['error'])
-
-    return json_data
+        e = sys.exc_info()[0]
+        print(e)
+        details['error'] = ErrorHandling(e)
+        json_data = json.dumps(details)
+    finally:
+        # Send the results to the browser.
+        return json_data
 
 
 def GetPointData(start_date, months, product, point_feature):
@@ -255,20 +259,20 @@ def GetMonthlySeries(start_date, end_date, target, method):
         json_data = json.dumps(graph)
         # Store the results in memcache.
         memcache.add(details_name, json_data, MEMCACHE_EXPIRATION)
-    except (ee.EEException, webapp2.HTTPException) as e:
+    except (ee.EEException, HTTPException):
         # Handle exceptions from the EE client library.
-        print('Error getting graph data')
-        details['error'] = str(e)
-        print(details['error'])
-
-    # Send the results to the browser.
-    return json_data
+        e = sys.exc_info()[0]
+        print(e)
+        details['error'] = ErrorHandling(e)
+        json_data = json.dumps(details)
+    finally:
+        # Send the results to the browser.
+        return json_data
 
 
 def ComputeMonthlyTimeSeries(start_date, end_date, region, product):
     start_date = ee.Date(start_date)
     end_date = ee.Date(end_date)
-    region = region.geometry()
     months = ee.List.sequence(0, end_date.difference(start_date, 'month').toInt())
 
     # Create base months
@@ -343,6 +347,11 @@ def OrderForGraph(details):
     print(rows)
 
     return rows
+
+
+def ErrorHandling(e):
+    print('Error getting graph data ERROR CAUGHT')
+    return 'Area too large' if e is HTTPException else str(e)
 
 
 ###############################################################################
