@@ -364,7 +364,9 @@ precipitation.App.prototype.getProduct = function (element) {
         return 'null';
     } else {
         var id = container.find('input:radio:checked').attr('id');
-        console.log('id: ' + id);
+        if (id === undefined) {
+            return 'null';
+        }
         return id.toUpperCase();
     }
 };
@@ -379,7 +381,9 @@ precipitation.App.prototype.getCalculation = function (element) {
         return 'null';
     } else {
         var id = container.find('input:radio:checked').attr('id');
-        console.log('id: ' + id);
+        if (id === undefined) {
+            return 'null';
+        }
         return id.toLowerCase();
     }
 };
