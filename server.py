@@ -119,8 +119,16 @@ class GraphHandler(webapp2.RequestHandler):
         start_date = self.request.get('startDate')
         end_date = self.request.get('endDate')
         target = self.request.get('target')
-        style = self.request.get('style')
-        content = GetMonthlySeries(start_date, end_date, target, style)
+        product = self.request.get('product')
+        calculation = self.request.get('calculation')
+        method = self.request.get('method')
+        if method == 'coordinate':
+            data = json.loads(target)
+            print(data)
+            features = data['features']
+            content = GetPointsLineSeries(start_date, end_date, product, features)
+        else:
+            content = GetMonthlySeries(start_date, end_date, target, method)
         self.response.headers['Content-Type'] = 'application/json'
         self.response.out.write(content)
 
@@ -134,61 +142,71 @@ app = webapp2.WSGIApplication([
 
 
 ###############################################################################
-#                                   Helpers.                                  #
+#                                Overlay                                      #
 ###############################################################################
 
+def GetRainMapID(start_date, end_date, region, product_name, calculation):
+    """Map for displaying summed up images of specified measurement"""
+    start_date = ee.Date(start_date)
+    end_date = ee.Date(end_date)
+    product = GetProductForName(product_name)
+    data = product['collection'].filterDate(start_date, end_date)
+    if calculation == 'sum':
+        data = data.sum().clip(region)
+    if calculation == 'mean':
+        data = data.mean().clip(region)
+    data = data.visualize(min=800, max=2000, palette='000000, 0000FF, FDFF92, FF2700, FF00E7')
+    return data.getMapId()
 
-def GetMonthlySeries(start_date, end_date, target, style):
-    """Returns data to draw graphs with"""
-    details_name = target + start_date + end_date
-    json_data = memcache.get(details_name)
-    # If we've cached details for this polygon, return them.
+
+###############################################################################
+#                                Graph For Points.                            #
+###############################################################################
+
+def GetPointsLineSeries(start_date, end_date, product, point_features):
+    combined_title = [point_features[i]['geometry']['coordinates'] for i in range(len(point_features))]
+    cache_title = str(combined_title) + start_date + end_date
+    # Get from cache
+    json_data = memcache.get(cache_title)
     if json_data is not None:
         print('From Cache:')
         print(json_data)
         return json_data
 
-    # Else build new dictionary
-    details = {}
-    if style == 'country':
-        region = GetCountryFeature(target)
-    else:
-        json_data = json.loads(target)
-        print(json_data)
-        region = ee.Feature(json_data)
+    # Else build new dataset
+    start_date = ee.Date(start_date)
+    end_date = ee.Date(end_date)
+    months = ee.List.sequence(0, end_date.difference(start_date, 'month').toInt())
+    product = GetProductForName(product)
 
-    # Try building json dict for each method
+    point_features = map(ee.Feature, point_features)  # Map to ee.Feature (loads GeoJSON)
+    details = {}
+
     try:
         print('NOT CACHE:')
-        for method in PRODUCTS:
-            details[method['name']] = ComputeMonthlyTimeSeries(start_date, end_date, region, method)
+        for point in point_features:
+            details[point.getInfo()['properties']['title']] = GetPointData(start_date, months, product, point)
         print(details)
         graph = OrderForGraph(details)
         json_data = json.dumps(graph)
         # Store the results in memcache.
-        memcache.add(details_name, json_data, MEMCACHE_EXPIRATION)
+        memcache.add(cache_title, json_data, MEMCACHE_EXPIRATION)
     except (ee.EEException, webapp2.HTTPException) as e:
         # Handle exceptions from the EE client library.
         print('Error getting graph data')
         details['error'] = str(e)
         print(details['error'])
 
-    # Send the results to the browser.
     return json_data
 
 
-def ComputeMonthlyTimeSeries(start_date, end_date, region, method):
-    start_date = ee.Date(start_date)
-    end_date = ee.Date(end_date)
-    region = region.geometry()
-    months = ee.List.sequence(0, end_date.difference(start_date, 'month').toInt())
-
+def GetPointData(start_date, months, product, point_feature):
     # Create base months
     def CalculateForMonth(count):
         m = start_date.advance(count, 'month')
-        img = method['collection'].filterDate(m, ee.Date(m).advance(1, 'month')).sum().reduceRegion(
-            ee.Reducer.mean(), region,
-            method['scale'])
+        img = product['collection'].filterDate(m, ee.Date(m).advance(1, 'month')).sum().reduceRegion(
+            ee.Reducer.mean(), point_feature.geometry(),
+            product['scale'])
         return ee.Feature(None, {
             'system:time_start': m.format('MM-YYYY'),
             'value': img.values().get(0)
@@ -204,31 +222,85 @@ def ComputeMonthlyTimeSeries(start_date, end_date, region, method):
     return chart_data
 
 
-def OrderForGraph(details):
-    """Generates a multi-dimensional array of information to be displayed in the Graphs"""
-    # Create first row of columns
-    first_row = ['Month']
-    for i in details:
-        first_row.append(i)
+###############################################################################
+#                                Graph For Regions.                           #
+###############################################################################
 
-    # Build array of months
-    first = details[details.keys()[0]]
-    months = [first[i][0] for i in range(len(first))]
-    print(months)
+def GetMonthlySeries(start_date, end_date, target, method):
+    """Returns data to draw graphs with"""
+    details_name = target + start_date + end_date
+    json_data = memcache.get(details_name)
+    # If we've cached details for this polygon, return them.
+    if json_data is not None:
+        print('From Cache:')
+        print(json_data)
+        return json_data
 
-    rows = [len(first)]
-    rows[0] = first_row
+    # Else build new dictionary
+    details = {}
+    if method == 'country':
+        region = GetCountryFeature(target)
+    else:
+        json_data = json.loads(target)
+        print(json_data)
+        region = ee.Feature(json_data)
 
-    # Create rows and add to main array
-    for index in range(len(months)):
-        row = [months[index]]
-        for i in details:
-            row.append(details[i][index][1])
-        rows.append(row)
+    # Try building json dict for each method
+    try:
+        print('NOT CACHE:')
+        for product in PRODUCTS:
+            details[product['name']] = ComputeMonthlyTimeSeries(start_date, end_date, region, product)
+        print(details)
+        graph = OrderForGraph(details)
+        json_data = json.dumps(graph)
+        # Store the results in memcache.
+        memcache.add(details_name, json_data, MEMCACHE_EXPIRATION)
+    except (ee.EEException, webapp2.HTTPException) as e:
+        # Handle exceptions from the EE client library.
+        print('Error getting graph data')
+        details['error'] = str(e)
+        print(details['error'])
 
-    print(rows)
+    # Send the results to the browser.
+    return json_data
 
-    return rows
+
+def ComputeMonthlyTimeSeries(start_date, end_date, region, product):
+    start_date = ee.Date(start_date)
+    end_date = ee.Date(end_date)
+    region = region.geometry()
+    months = ee.List.sequence(0, end_date.difference(start_date, 'month').toInt())
+
+    # Create base months
+    def CalculateForMonth(count):
+        m = start_date.advance(count, 'month')
+        img = product['collection'].filterDate(m, ee.Date(m).advance(1, 'month')).sum().reduceRegion(
+            ee.Reducer.mean(), region,
+            product['scale'])
+        return ee.Feature(None, {
+            'system:time_start': m.format('MM-YYYY'),
+            'value': img.values().get(0)
+        })
+
+    chart_data = months.map(CalculateForMonth).getInfo()
+
+    def ExtractMean(feature):
+        return [feature['properties']['system:time_start'], feature['properties']['value']]
+
+    chart_data = map(ExtractMean, chart_data)
+    print(chart_data)
+    return chart_data
+
+
+###############################################################################
+#                                   Helpers.                                  #
+###############################################################################
+
+def GetProductForName(name):
+    for p in PRODUCTS:
+        if p['name'] == name:
+            return p
+    return PRODUCTS[0]
 
 
 def GetCountryFeature(country):
@@ -245,21 +317,32 @@ def GetCountryFeature(country):
     #     return collections.filterMetadata('Country', 'equals', country)
 
 
-def GetRainMapID(start_date, end_date, region, product_name, calculation):
-    """Map for displaying summed up images of specified measurement"""
-    start_date = ee.Date(start_date)
-    end_date = ee.Date(end_date)
-    product = PRODUCTS[0]
-    for p in PRODUCTS:
-        if p['name'] == product_name:
-            product = p
-    data = product['collection'].filterDate(start_date, end_date)
-    if calculation == 'sum':
-        data = data.sum().clip(region)
-    if calculation == 'mean':
-        data = data.mean().clip(region)
-    data = data.visualize(min=800, max=2000, palette='000000, 0000FF, FDFF92, FF2700, FF00E7')
-    return data.getMapId()
+def OrderForGraph(details):
+    """Generates a multi-dimensional array of information to be displayed in the Graphs"""
+    # Create first row of columns
+    first_row = ['Month']
+    for i in details:
+        first_row.append(i)
+
+    # Build array of months (Assumes Month (mm-yyyy) to be first, and have the value as second element per row
+    first = details[details.keys()[0]]
+    months = [first[i][0] for i in range(len(first))]
+    print(months)
+
+    rows = [len(first)]
+    rows[0] = first_row
+
+    # Create rows and add to main array
+    for index in range(len(months)):
+        row = [months[index]]
+        for i in details:
+            value = details[i][index][1]
+            row.append(0.0 if value is None else value)
+        rows.append(row)
+
+    print(rows)
+
+    return rows
 
 
 ###############################################################################

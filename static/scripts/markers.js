@@ -80,28 +80,28 @@ markers.addMarker = function (lat, lng, title) {
  * Returns JSON of all markers for EE
  */
 markers.getJSON = function () {
-    var data = {'FeatureCollection': []};
-    precipitation.instance.markers.forEach(function (marker) {
-        var temp = markers.TEMPLATE;
+    var features = $.map(precipitation.instance.markers, function (marker) {
+        console.log(marker);
+        var temp = {
+            "type": "Feature",
+            "properties": {
+                "title": "Point",
+                "id": "point"
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": []
+            }
+        };
         temp.properties.title = marker.getTitle();
         var position = marker.getPosition();
         temp.geometry.coordinates = [position.lat(), position.lng()];
-        data.featureCollection.push(temp);
+        console.log(temp);
+        return temp;
     });
+    var data = {'features': features};
     var json = JSON.stringify(data);
     console.log(json);
     return json;
-};
-
-markers.TEMPLATE = {
-    "type": "Feature",
-    "properties": {
-        "title": "Point",
-        "id": "point"
-    },
-    "geometry": {
-        "type": "Point",
-        "coordinates": []
-    }
 };
 

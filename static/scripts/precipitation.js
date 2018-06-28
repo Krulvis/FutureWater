@@ -15,7 +15,7 @@ precipitation.App = function () {
     this.map = this.createMap();
 
     //Some styling
-    $('.results').draggable();
+    $('.results').draggable().resizable();
     $.getJSON('static/polygons/countries2.json', function (json) {
         var names = [];
         json.features.forEach(function (feature) {
@@ -144,9 +144,9 @@ precipitation.App.prototype.getGraph = function () {
         url: '/graph?startDate=' + startDate + '&endDate=' + endDate + '&method=' + this.selectionMethod + '&product=' + this.getProduct(graph) + '&calculation=' + this.getCalculation(graph) + '&target=' + this.getTarget(),
         method: 'GET',
         beforeSend: function () {
-            button.attr('value', 'Loading...');
+            button.html('Loading...');
         }, error: function (data) {
-            button.attr('value', 'error');
+            button.html('error');
             $('#error-message').show().html(data['error']);
         }
     }).done((function (data) {
@@ -154,9 +154,9 @@ precipitation.App.prototype.getGraph = function () {
             $('#error-message').show().html(data['error']);
         } else {
             $('.results').show();
-            var title = this.selectionMethod === 'country' ? this.selectedCountry.getProperty('title') : 'Polygon';
+            var title = this.selectionMethod === 'country' ? this.selectedCountry.getProperty('title') : this.selectionMethod === 'coordinate' ? 'Markers' : 'ShapeFile';
             $('.results .title').show().text(title);
-            button.attr('value', precipitation.App.GRAPH_BASE_BUTTON_NAME);
+            button.html(precipitation.App.GRAPH_BASE_BUTTON_NAME);
             console.log(data);
             this.showChart(data)
         }
@@ -378,7 +378,7 @@ precipitation.App.prototype.getTarget = function () {
         case 'shapefile':
             return null;
         case 'coordinate':
-            return null;
+            return markers.getJSON();
         default:
             $('#error-message').show().html('Please select a method of targeting first!');
             return 'null';
