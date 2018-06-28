@@ -16,6 +16,10 @@ precipitation.App = function () {
 
     //Some styling
     $('.results').draggable().resizable();
+    $('.results').on('resizestop', function () {
+        console.log('Resize complete');
+        precipitation.instance.showChart();
+    });
     $.getJSON('static/polygons/countries2.json', function (json) {
         var names = [];
         json.features.forEach(function (feature) {
@@ -58,6 +62,7 @@ precipitation.App.prototype.initVals = function () {
     this.selectedCountry = null;
     this.markers = [];
     this.selectionMethod = 'country';
+    this.chartData = null;
     products.resetRadios();
     calculations.resetRadios();
 };
@@ -153,12 +158,12 @@ precipitation.App.prototype.getGraph = function () {
         if (data['error']) {
             $('#error-message').show().html(data['error']);
         } else {
-            $('.results').show();
             var title = this.selectionMethod === 'country' ? this.selectedCountry.getProperty('title') : this.selectionMethod === 'coordinate' ? 'Markers' : 'ShapeFile';
             $('.results .title').show().text(title);
             button.html(precipitation.App.GRAPH_BASE_BUTTON_NAME);
             console.log(data);
-            this.showChart(data)
+            this.chartData = data;
+            this.showChart();
         }
     }).bind(this));
 };
@@ -230,9 +235,9 @@ precipitation.App.prototype.handleCountryUIClick = function (event, ui) {
  * @param {Array<Array<number>>} timeseries The timeseries data
  *     to plot in the chart.
  */
-precipitation.App.prototype.showChart = function (timeseries) {
-    var data = google.visualization.arrayToDataTable(timeseries);
-
+precipitation.App.prototype.showChart = function () {
+    $('.results').show();
+    var data = google.visualization.arrayToDataTable(this.chartData);
     var wrapper = new google.visualization.ChartWrapper({
         chartType: 'LineChart',
         dataTable: data,

@@ -78,7 +78,12 @@ body,
 
 .futurewater .results .details {
     overflow: hidden;
+    height: 90%;
     max-height: 500px;
+}
+
+.futurewater .results .details .chart {
+    height: 100%;
 }
 
 .futurewater .radio-inline {
