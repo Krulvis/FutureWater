@@ -4,6 +4,8 @@
     <title>Future Water Application</title>
     <meta charset="utf-8">
 
+    <link rel="shortcut icon" href="/static/img/icon.png">
+
     <!-- Support for browsers on mobile phones. -->
     <meta name="viewport"
           content="width=device-width, initial-scale=1, user-scalable=no">
@@ -13,7 +15,8 @@
           rel='stylesheet' type='text/css'>
 
     <!-- The Google JavaScript loader tool (for the Maps, Charts APIs). -->
-    <script src="https://www.google.com/jsapi"></script>
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
 
     <!-- JQuery CSS/JS -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
@@ -29,6 +32,7 @@
 
     <!-- Custom CSS styles for our application. -->
     <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/thumbnails.css">
 
     <!-- Our custom JavaScript for Earth Engine App. -->
     <script src="/static/scripts/markers.js"></script>
@@ -48,9 +52,44 @@
 
     <div class="settings panel">
         <!-- The title of the application. -->
-        <img class="logo" src="/static/img/logo.png">
-        <button type="button" class="btn btn-info" data-toggle="collapse" data-target="#information">Information
+        <div class="header-container">
+            <div class="page-header">
+                <h1>Precipitation Application</h1>
+            </div>
+            <div class="advertisement">
+                <p>Powered by: </p>
+                <img class="logo" src="/static/img/logo.png">
+            </div>
+        </div>
+
+
+        <button id="information-button" type="button" class="btn btn-primary" data-toggle="collapse"
+                data-target="#information"><i
+                class="fas fa-info-circle fa-lg fa-pull-left"></i>Information
         </button>
+        <div class="ui-widget top-center top center positioned ui-panel" id="legend"
+             style="margin-top: 10px; background-color: white;">
+            <div class="ui-layout layout-flow layout-flow-vertical">
+                <div class="ui-widget stretch-horizontal ui-panel" style="margin: 0px; background-color: white;">
+                    <div class="ui-layout layout-flow layout-flow-horizontal">
+                        <div class="ui-widget ui-label" style="margin: 8px; background-color: white;">
+                            <span class="label">0</span>
+                        </div>
+                        <div class="ui-widget stretch-horizontal ui-label"
+                             style="margin: 8px; background-color: white;">
+                            <span class="label" style="width:100%; text-align: center;">Precipitation (mm)</span>
+                        </div>
+                        <div class="ui-widget ui-label" id="legend-max" style="margin: 8px; background-color: white;">
+                            <span class="label">300</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="ui-widget bottom-center bottom center positioned ui-thumbnail"
+                     style="background-color: white; padding: 1px;">
+                    <img src="/static/img/legend.png">
+                </div>
+            </div>
+        </div>
         <div id="information" class="collapse">
             Lorem ipsum dolor sit amet, consectetur adipisicing elit,
             sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,
@@ -58,16 +97,19 @@
         </div>
         <form class="settings-form">
             <!-- DATES SELECTION -->
-            <div class="form-group">
-                <label class="bold" for="startDate">Start Date</label>
-                <input type="date" class="form-control datepicker" id="startDate" value="2017-01-01">
+            <div class="dates">
+                <div class="form-group">
+                    <label class="bold" for="startDate">Start Date</label>
+                    <input type="date" class="form-control datepicker" id="startDate" value="2017-01-01">
+                </div>
+                <div class="form-group">
+                    <label class="bold" for="endDate">End Date</label>
+                    <input type="date" class="form-control datepicker" id="endDate" value="2018-01-01">
+                </div>
             </div>
-            <div class="form-group">
-                <label class="bold" for="endDate">End Date</label>
-                <input type="date" class="form-control datepicker" id="endDate" value="2018-01-01">
-            </div>
+
             <!-- STYLE SELECTION -->
-            <div class="style-container">
+            <div class="method-container">
                 <ul class="nav nav-tabs nav-justified">
                     <li class="nav-item"><a class="nav-link active show" data-toggle="tab" href="#country"><i
                             class="fas fa-globe-americas fa-lg fa-pull-left"></i>Country</a></li>
@@ -126,18 +168,17 @@
                 </div>
             </div>
             <p id="error-message"></p>
-            <hr>
             <!-- Data Buttons -->
             <div class="create-buttons pull-down">
-                <ul class="nav nav-pills nav-justified">
-                    <li class="nav-item"><a id="graph-tab" class="nav-link" data-toggle="tab" href="#graph"><i
+                <ul class="nav nav-tabs nav-justified">
+                    <li class="nav-item"><a id="graph-tab" class="nav-link active show" data-toggle="tab" href="#graph"><i
                             class="fas fa-chart-area fa-lg fa-pull-left"></i>Graph</a></li>
                     <li class="nav-item"><a id="overlay-tab" class="nav-link" data-toggle="tab" href="#overlay"><i
                             class="fas fa-map fa-lg fa-pull-left"></i>Overlay</a></li>
                 </ul>
                 <div class="tab-content">
                     <!-- Country Options -->
-                    <div id="graph" class="tab-pane fade">
+                    <div id="graph" class="tab-pane fade in active show">
                         <button class="btn btn-success form-control" onclick="return false;" id="graph-button">Create
                             Graph
                         </button>
@@ -148,7 +189,18 @@
                         </button>
                     </div>
                 </div>
+                <div class="download download-img">
+                    <a target="_blank" class="btn btn-success btn-block form-control" id="download-img-btn" style="color:inherit;">
+                        <i class="far fa-save fa-lg"></i> Download Image
+                    </a>
+                </div>
+                <div class="download download-csv">
+                    <a target="_blank" class="btn btn-success btn-block form-control" id="download-csv-btn" style="color:inherit;">
+                        <i class="far fa-save fa-lg"></i> Download CSV
+                    </a>
+                </div>
             </div>
+
         </form>
 
     </div>
@@ -173,6 +225,7 @@
 
             <!-- The element to hold the error message. -->
             <p class="error"></p>
+            <!-- The element to download the chart data as CSV. -->
         </div>
     </div>
 </div>

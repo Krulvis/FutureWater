@@ -56,5 +56,9 @@ products.html = '<div class="products-container form-group">\n' +
     '                                    <input type="radio" id="GLDAS" name="product" class="custom-control-input">\n' +
     '                                    <label class="custom-control-label" for="GLDAS">GLDAS</label>\n' +
     '                                </div>\n' +
+    '                                <div class="custom-control custom-radio custom-control-inline">\n' +
+    '                                    <input type="radio" id="MOD16" name="product" class="custom-control-input">\n' +
+    '                                    <label class="custom-control-label" for="MOD16">MOD16</label>\n' +
+    '                                </div>\n' +
     '                            </div>\n' +
     '                        </div>';

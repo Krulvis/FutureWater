@@ -33,8 +33,35 @@ body,
     max-height: 98%;
 }
 
+.futurewater .settings .container h1 {
+    color: #0042ff;
+    font-weight: bold;
+}
+
+.futurewater .settings .container p {
+    font-style: italic;
+}
+
 .futurewater .settings .bold {
     font-weight: bold;
+}
+
+.futurewater .settings .logo {
+    width: 100%;
+    max-width: 400px;
+    height: auto;
+}
+
+.futurewater .settings .settings-form {
+    margin-bottom: 5px;
+}
+
+.futurewater .settings #information-button {
+    margin-top: 20px;
+}
+
+.futurewater .settings .dates {
+    padding-top: 20px;
 }
 
 .futurewater .settings #error-message {
@@ -54,9 +81,42 @@ body,
     overflow: auto;
 }
 
-.futurewater .settings .style-options {
-    display: none;
+.futurewater .settings .method-container {
     padding-top: 20px;
+}
+
+.futurewater .settings .method-container .markers-table .table tbody {
+    font-size: 14px;
+}
+
+.futurewater .settings .method-container .markers-table .table .title {
+    font-size: 12px;
+}
+
+.futurewater .settings .create-buttons {
+    padding-top: 30px;
+}
+
+.futurewater .settings .create-buttons .download {
+    padding-top: 20px;
+    display: none;
+    color: white;
+}
+
+.futurewater .settings .create-buttons .download #download-img {
+    target-new: tab;
+}
+
+.futurewater .settings .download #download-csv {
+    target-new: tab;
+}
+
+.futurewater .settings .nav-tabs > li > .active {
+    color: black !important;
+}
+
+.futurewater .settings .nav-tabs > li > a:hover {
+
 }
 
 .hidden {
@@ -93,6 +153,7 @@ body,
 /* Small screens. */
 
 @media (max-width: 900px) {
+
     .futurewater .settings .logo {
         top: 22px;
         left: 30px;
@@ -100,8 +161,7 @@ body,
 
     .futurewater .panel {
         width: 100%;
-        bottom: 0px;
-        height: 50px;
+        height: 60%;
     }
 
     .futurewater .results .details {
@@ -134,13 +194,24 @@ body,
 /* Large screens. */
 
 @media (min-width: 900px) {
+
+    .futurewater .settings .header-container h1 {
+        font-size: 60px;
+    !important;
+    }
+
     .futurewater .settings .logo {
         top: 30px;
     }
 
+    .futurewater .settings #information {
+        max-width: 750px;
+    }
+
     .futurewater .settings {
         left: 20px;
-        width: 650px;
+        min-width: 650px;
+        max-width: 800px;
         /*height: 98%;*/
         opacity: .98;
         border-radius: 4px;

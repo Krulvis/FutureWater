@@ -1,0 +1,75 @@
+.futurewater #legend {
+    display: none;
+}
+
+.futurewater .layout-absolute > .top {
+    top: 10px;
+}
+
+.futurewater .ui-widget {
+    -webkit-background-clip: padding-box;
+    -moz-background-clip: padding-box;
+    background-clip: padding-box;
+    -webkit-border-radius: 2px;
+    -moz-border-radius: 2px;
+    border-radius: 2px;
+    box-shadow: rgba(0, 0, 0, 0.298039) 0px 1px 4px -1px;
+    -moz-box-shadow: rgba(0, 0, 0, 0.298039) 0px 1px 4px -1px;
+    -webkit-box-shadow: rgba(0, 0, 0, 0.298039) 0px 1px 4px -1px;
+}
+
+.futurewater .ui-panel {
+    margin: 0;
+    position: relative;
+    align-self: stretch;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.futurewater .ui-label {
+    display: flex;
+    align-items: center;
+}
+
+.futurewater .layout-flow {
+    display: flex;
+    flex-wrap: nowrap;
+}
+
+.futurewater .layout-flow-vertical {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+}
+
+.futurewater .layout-flow-vertical > .ui-widget {
+    flex: 0 0 auto;
+}
+
+.futurewater .ui-panel.stretch-horizontal > .ui-layout, .ui-panel.custom-width > .ui-layout {
+    align-self: stretch;
+}
+
+.futurewater .layout-flow-horizontal {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: flex-start;
+}
+
+.futurewater .layout-flow-horizontal > .ui-widget {
+    flex: 0 0 auto;
+}
+
+.futurewater .layout-flow-horizontal > .ui-widget.stretch-horizontal {
+    flex: 1 0 0;
+}
+
+.futurewater .ui-widget .ui-thumbnail {
+    width: 100%;
+}
+
+.futurewater .ui-widget .ui-thumbnail img {
+    height: 30px;
+    width: 100%;
+}

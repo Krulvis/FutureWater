@@ -2,24 +2,31 @@ precipitation = {};
 
 precipitation.boot = function (key) {
     // Load external libraries.
-    google.load('visualization', '1.0');
+    //google.load('visualization', '1', {packages: ["corechart"]});
     google.load('maps', '3', {'other_params': 'key=' + key + '&libraries=drawing'});
 
     google.setOnLoadCallback(function () {
-        precipitation.instance = new precipitation.App();
-        precipitation.instance.initVals();
+        google.charts.load("current", {packages: ['corechart']});
+        google.charts.setOnLoadCallback(function () {
+            precipitation.instance = new precipitation.App();
+            precipitation.instance.initVals();
+        });
+
     });
 };
 
 precipitation.App = function () {
     this.map = this.createMap();
 
-    //Some styling
-    $('.results').draggable().resizable();
-    $('.results').on('resizestop', function () {
+    //Some styling (responsiveness of results panel)
+    var results = $('.results');
+    results.draggable().resizable();
+    results.on('resizestop', function () {
         console.log('Resize complete');
         precipitation.instance.showChart();
     });
+
+    //Get GeoJSON for all countries
     $.getJSON('static/polygons/countries2.json', function (json) {
         var names = [];
         json.features.forEach(function (feature) {
@@ -39,7 +46,7 @@ precipitation.App = function () {
     $('.results .close').click(this.hidePanel.bind(this));
 
     //Respond to radio button clicks (switching input style)
-    $('.style-container .nav-item').on('click', this.switchStyle.bind(this));
+    $('.method-container .nav-item').on('click', this.switchStyle.bind(this));
 
     //Adds a marker for given input
     $('.add-marker').on('click', markers.addMarkerFromForm.bind(this));
@@ -52,6 +59,16 @@ precipitation.App = function () {
     $('#graph-button').on('click', function (event) {
         precipitation.instance.getGraph();
     });
+
+    $('#download-csv-btn').click(function () {
+        var csvFormattedDataTable = precipitation.App.graphToCSV(precipitation.instance.chartData);
+        var encodedUri = 'data:application/csv;charset=utf-8,' + encodeURIComponent(csvFormattedDataTable);
+        this.href = encodedUri;
+        this.download = 'table-data.csv';
+        this.target = '_blank';
+    });
+
+    //this.map.controls[google.maps.ControlPosition.TOP_CENTER].push(document.getElementById('legend'));
 };
 
 /**
@@ -108,6 +125,8 @@ precipitation.App.prototype.getOverlay = function () {
     var endDate = $('#endDate').val();
     var button = $('#overlay-button');
     var overlay = $('#overlay');
+    var downloadImg = $('.download-img');
+    var downloadCSV = $('.download-csv');
     var product = this.getProduct(overlay);
     var calculation = this.getCalculation(overlay);
     if (!this.checkRegion(false, product, calculation)) {
@@ -117,7 +136,9 @@ precipitation.App.prototype.getOverlay = function () {
         url: '/overlay?startDate=' + startDate + '&endDate=' + endDate + '&method=' + this.selectionMethod + '&product=' + product + '&calculation=' + calculation + '&target=' + this.getTarget(),
         method: 'GET',
         beforeSend: function () {
-            button.html('Loading...');
+            button.html('Loading map overlay...');
+            downloadImg.hide();
+            downloadCSV.hide();
             precipitation.instance.clearOverlays();
         },
         error: function (data) {
@@ -128,11 +149,14 @@ precipitation.App.prototype.getOverlay = function () {
         if (data['error']) {
             $('#error-message').show().html('Error: ' + data['error']);
         } else {
-            button.html('Map is being drawn...');
+            $('#error-message').show().html('Map is being drawn... Please wait before drawing new map!');
+            button.html(precipitation.App.OVERLAY_BASE_BUTTON_NAME);
             var jsonObj = $.parseJSON(data);
             var mapId = jsonObj['mapid'];
             var token = jsonObj['token'];
-            this.addOverlay(mapId, token);
+            downloadImg.show();
+            $('#download-img-btn').attr("href", jsonObj['download_url']);
+            this.addOverlay(mapId, token, calculation);
         }
     }).bind(this));
 };
@@ -145,6 +169,8 @@ precipitation.App.prototype.getGraph = function () {
     var endDate = $('#endDate').val();
     var button = $('#graph-button');
     var graph = $('#graph');
+    var downloadImg = $('.download-img');
+    var downloadCSV = $('.download-csv');
     var product = this.getProduct(graph);
     var calculation = this.getCalculation(graph);
     if (!this.checkRegion(true, product, calculation)) {
@@ -154,6 +180,8 @@ precipitation.App.prototype.getGraph = function () {
         url: '/graph?startDate=' + startDate + '&endDate=' + endDate + '&method=' + this.selectionMethod + '&product=' + product + '&calculation=' + calculation + '&target=' + this.getTarget(),
         method: 'GET',
         beforeSend: function () {
+            downloadCSV.hide();
+            downloadImg.hide();
             button.html('Loading...');
         }, error: function (data) {
             button.html('error');
@@ -161,11 +189,13 @@ precipitation.App.prototype.getGraph = function () {
         }
     }).done((function (data) {
         if (data['error']) {
+            button.html(precipitation.App.GRAPH_BASE_BUTTON_NAME);
             $('#error-message').show().html(data['error']);
         } else {
             button.html(precipitation.App.GRAPH_BASE_BUTTON_NAME);
             this.chartTitle = this.selectionMethod === 'country' ? this.selectedCountry.getProperty('Country') : this.selectionMethod === 'coordinate' ? 'Markers' : 'ShapeFile';
             console.log(data);
+            downloadCSV.show();
             this.chartData = data;
             this.showChart();
         }
@@ -211,16 +241,16 @@ precipitation.App.prototype.handleMapClick = function (event) {
     if (this.selectionMethod === 'coordinate') {
         markers.addMarkerFromClick(event);
     }
-    /* disable fucking broken feature click
-        else if (this.selectionMethod === 'country') {
-            var feature = event.feature;
-            var name = feature.getProperty('Country');
-            console.log('Clicked: ' + name);
-            this.selectedCountry = feature;
-            this.map.data.revertStyle();
-            this.map.data.overrideStyle(feature, precipitation.App.SELECTED_STYLE);
-            $('#selected-country').val(name);
-        } */
+
+    else if (this.selectionMethod === 'country') {
+        var feature = event.feature;
+        var name = feature.getProperty('Country');
+        console.log('Clicked: ' + name);
+        this.selectedCountry = feature;
+        this.map.data.revertStyle();
+        this.map.data.overrideStyle(feature, precipitation.App.SELECTED_STYLE);
+        $('#selected-country').val(name);
+    }
 };
 
 /**
@@ -254,10 +284,12 @@ precipitation.App.prototype.showChart = function () {
         chartType: 'LineChart',
         dataTable: data,
         options: {
-            title: 'Precipitation',
+            title: 'Precipitation over time',
             //curveType: 'function',
-            legend: {position: 'none'},
-            titleTextStyle: {fontName: 'Roboto'}
+            legend: {position: 'bottom'},
+            titleTextStyle: {fontName: 'Roboto'},
+            hAxis: {title: 'Time'},
+            vAxis: {title: 'Precipitation (mm)'}
         }
     });
     $('.results .chart').show();
@@ -271,8 +303,13 @@ precipitation.App.prototype.showChart = function () {
  * Fires event on done loading map
  * @param eeMapId
  * @param eeToken
+ * @param calculation
  */
-precipitation.App.prototype.addOverlay = function (eeMapId, eeToken) {
+precipitation.App.prototype.addOverlay = function (eeMapId, eeToken, calculation) {
+    var legend = $('#legend');
+    var max = (calculation === 'sum' ? '3000' : '300');
+    legend.find('#legend-max').html(max);
+    legend.show();
     console.log('MapID: ' + eeMapId + ', Token: ' + eeToken);
     var overlay = new google.maps.ImageMapType({
         getTileUrl: function (tile, zoom) {
@@ -317,7 +354,8 @@ precipitation.App.prototype.switchStyle = function (event) {
     this.selectionMethod = style.toLowerCase();
     $('.selection-group button').html(style);
     $('#error-message').hide();
-
+    $('.download').hide();
+    $('#legend').hide();
     /*
     Reset buttons
      */
@@ -404,6 +442,25 @@ precipitation.App.prototype.getTarget = function () {
             $('#error-message').show().html('Please select a method of targeting first!');
             return 'null';
     }
+};
+
+/**
+ * Exports the chart data to CSV cuz dataTableToCSV is fucking gone...
+ * @returns {*|string}
+ */
+precipitation.App.graphToCSV = function (dataTable) {
+    var json = dataTable;
+    var fields = Object.keys(json[0]);
+    var replacer = function (key, value) {
+        return value === null ? '' : value
+    };
+    var csv = json.map(function (row) {
+        return fields.map(function (fieldName) {
+            return JSON.stringify(row[fieldName], replacer)
+        }).join(',')
+    });
+    csv.unshift(fields.join(','));
+    return csv.join('\r\n');
 };
 
 precipitation.App.EE_URL = 'https://earthengine.googleapis.com';

@@ -31,6 +31,7 @@
     <orderEntry type="library" name="@types/google-images" level="application" />
     <orderEntry type="library" name="@types/google-earth" level="application" />
     <orderEntry type="library" name="@types/google-maps" level="application" />
+    <orderEntry type="library" name="@types/google.visualization" level="application" />
   </component>
   <component name="TemplatesService">
     <option name="TEMPLATE_CONFIGURATION" value="Jinja2" />

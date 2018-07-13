@@ -107,10 +107,12 @@ class OverlayHandler(webapp2.RequestHandler):
             print(json_data)
             feature = ee.Feature(json_data)
 
-        data = GetRainMapID(start_date, end_date, feature, product, calculation)
+        overlay = GetOverlayImage(start_date, end_date, feature, product, calculation)
+        data = overlay.getMapId()
         values = {
             'mapid': data['mapid'],
-            'token': data['token']
+            'token': data['token'],
+            'download_url': overlay.getDownloadURL()
         }
         self.response.out.write(json.dumps(values))
 
@@ -147,18 +149,23 @@ app = webapp2.WSGIApplication([
 #                                Overlay                                      #
 ###############################################################################
 
-def GetRainMapID(start_date, end_date, region, product_name, calculation):
+def GetOverlayImage(start_date, end_date, region, product_name, calculation):
     """Map for displaying summed up images of specified measurement"""
     start_date = ee.Date(start_date)
     end_date = ee.Date(end_date)
     product = GetProductForName(product_name)
-    data = product['collection'].filterDate(start_date, end_date)
+    images = product['collection'].filterDate(start_date, end_date)
+    image = None
     if calculation == 'sum':
-        data = data.sum().clip(region)
+        images = images.sum().clip(region)
+        image = images.visualize(min=0, max=3000, palette='800000, ff9900, fbf606, 008000, 0099ff')
     if calculation == 'mean':
-        data = data.mean().clip(region)
-    data = data.visualize(min=800, max=2000, palette='000000, 0000FF, FDFF92, FF2700, FF00E7')
-    return data.getMapId()
+        images = images.mean().clip(region)
+        image = images.visualize(min=0, max=300, palette='800000, ff9900, fbf606, 008000, 0099ff')
+
+    # export_task = ee.batch.Export.image.toDrive(image, 'Export_Image', scale=5000, maxPixels=1e9)
+    # export_task.start()
+    return image
 
 
 ###############################################################################
@@ -398,6 +405,8 @@ def Multiply(i, value):
 
 TRMM = ee.ImageCollection('TRMM/3B42').select('precipitation').map(
     lambda i: Multiply(i, 3))
+MOD16 = ee.ImageCollection('MODIS/006/MOD16A2').select('ET').map(
+    lambda i: Multiply(i, 0.1))
 PERSIANN = ee.ImageCollection('NOAA/PERSIANN-CDR')
 CHIRPS = ee.ImageCollection('UCSB-CHG/CHIRPS/DAILY')
 CFSV2 = ee.ImageCollection('NOAA/CFSV2/FOR6H').select('Precipitation_rate_surface_6_Hour_Average').map(
@@ -431,4 +440,10 @@ PRODUCTS = [
         'collection': GLDAS,
         'scale': 30000
     },
+    {
+        'name': 'MOD16',
+        'collection': MOD16,
+        'scale': 500
+
+    }
 ]
