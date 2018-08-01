@@ -33,76 +33,67 @@
     <!-- Custom CSS styles for our application. -->
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="stylesheet" href="/static/css/thumbnails.css">
+    <link rel="stylesheet" href="/static/css/header.css">
 
     <!-- Our custom JavaScript for Earth Engine App. -->
     <script src="/static/scripts/markers.js"></script>
     <script src="/static/scripts/products.js"></script>
     <script src="/static/scripts/calculations.js"></script>
+    <script src="/static/scripts/timesteps.js"></script>
     <script src="/static/scripts/precipitation.js"></script>
     <script src="/static/scripts/inputFile.js"></script>
 
 </head>
 <body>
+<!-- The title of the application. -->
+<div class="header-container row">
+    <div class="advertisement col-md-3">
+        <span class="helper"></span>
+        <a href="https://www.futurewater.eu/"><img class="logo" src="/static/img/logo.png"></a>
+    </div>
+    <div class="col-md-5">
+        <div class="page-header row">
+            <div class="raincloud-logo col-md-6">
+                <span class="helper"></span>
+                <img class="raincloud" src="/static/img/raincloud.png">
+            </div>
+            <div class="app-title col-md-6">
+                <h1>RainCloud App</h1>
+            </div>
+        </div>
+    </div>
+    <div class="extra col-md-4 row">
+        <div class="col-md-9">
+            <div id="information" class="collapse ">
+                Lorem ipsum dolor sit amet, consectetur adipisicing elit,
+                sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,
+                quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+            </div>
+        </div>
+        <div class="buttons col-md-3">
+            <div class="contact"><a href="https://www.futurewater.eu/about-us/contact-2/"><i
+                    class="far fa-envelope"></i> Contact</a></div>
+            <div class="information" data-toggle="collapse"
+                 data-target="#information"><i class="fas fa-info-circle"></i> Information
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- The DOM of our application. -->
 <div class="futurewater">
-
     <!-- A container which the Maps API will populate with a map. -->
     <div class="map"></div>
 
     <div class="settings panel">
-        <!-- The title of the application. -->
-        <div class="header-container">
-            <div class="page-header">
-                <h1>Precipitation Application</h1>
-            </div>
-            <div class="advertisement">
-                <p>Powered by: </p>
-                <img class="logo" src="/static/img/logo.png">
-            </div>
-        </div>
-
-
-        <button id="information-button" type="button" class="btn btn-primary" data-toggle="collapse"
-                data-target="#information"><i
-                class="fas fa-info-circle fa-lg fa-pull-left"></i>Information
-        </button>
-        <div class="ui-widget top-center top center positioned ui-panel" id="legend"
-             style="margin-top: 10px; background-color: white;">
-            <div class="ui-layout layout-flow layout-flow-vertical">
-                <div class="ui-widget stretch-horizontal ui-panel" style="margin: 0px; background-color: white;">
-                    <div class="ui-layout layout-flow layout-flow-horizontal">
-                        <div class="ui-widget ui-label" style="margin: 8px; background-color: white;">
-                            <span class="label">0</span>
-                        </div>
-                        <div class="ui-widget stretch-horizontal ui-label"
-                             style="margin: 8px; background-color: white;">
-                            <span class="label" style="width:100%; text-align: center;">Precipitation (mm)</span>
-                        </div>
-                        <div class="ui-widget ui-label" id="legend-max" style="margin: 8px; background-color: white;">
-                            <span class="label">300</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="ui-widget bottom-center bottom center positioned ui-thumbnail"
-                     style="background-color: white; padding: 1px;">
-                    <img src="/static/img/legend.png">
-                </div>
-            </div>
-        </div>
-        <div id="information" class="collapse">
-            Lorem ipsum dolor sit amet, consectetur adipisicing elit,
-            sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,
-            quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-        </div>
         <form class="settings-form">
             <!-- DATES SELECTION -->
-            <div class="dates">
-                <div class="form-group">
+            <div class="dates row">
+                <div class="col-lg form-group">
                     <label class="bold" for="startDate">Start Date</label>
                     <input type="date" class="form-control datepicker" id="startDate" value="2017-01-01">
                 </div>
-                <div class="form-group">
+                <div class="col-lg form-group">
                     <label class="bold" for="endDate">End Date</label>
                     <input type="date" class="form-control datepicker" id="endDate" value="2018-01-01">
                 </div>
@@ -119,7 +110,7 @@
                             class="fas fa-map-marker-alt fa-lg fa-pull-left"></i>Coordinate</a>
                     </li>
                 </ul>
-                <div class="tab-content">
+                <div class="method-content tab-content">
                     <!-- Country Options -->
                     <div id="country" class="tab-pane fade in active show">
                         <input class="form-control" id="selected-country" type="text"
@@ -176,6 +167,9 @@
                     <li class="nav-item"><a id="overlay-tab" class="nav-link" data-toggle="tab" href="#overlay"><i
                             class="fas fa-map fa-lg fa-pull-left"></i>Overlay</a></li>
                 </ul>
+                <div class="create-options">
+
+                </div>
                 <div class="tab-content">
                     <!-- Country Options -->
                     <div id="graph" class="tab-pane fade in active show">
@@ -190,19 +184,19 @@
                     </div>
                 </div>
                 <div class="download download-img">
-                    <a target="_blank" class="btn btn-success btn-block form-control" id="download-img-btn" style="color:inherit;">
+                    <a target="_blank" class="btn btn-success btn-block form-control" id="download-img-btn"
+                       style="color:inherit;">
                         <i class="far fa-save fa-lg"></i> Download Image
                     </a>
                 </div>
                 <div class="download download-csv">
-                    <a target="_blank" class="btn btn-success btn-block form-control" id="download-csv-btn" style="color:inherit;">
+                    <a target="_blank" class="btn btn-success btn-block form-control" id="download-csv-btn"
+                       style="color:inherit;">
                         <i class="far fa-save fa-lg"></i> Download CSV
                     </a>
                 </div>
             </div>
-
         </form>
-
     </div>
 
     <!-- The panel to show details about a place. -->
@@ -229,13 +223,36 @@
         </div>
     </div>
 </div>
-
+<div class="ui-widget top-center top center positioned ui-panel" id="legend"
+     style="margin-top: 10px; background-color: white;">
+    <div class="ui-layout layout-flow layout-flow-vertical" style="padding:8px;">
+        <div class="ui-widget stretch-horizontal ui-panel" style="margin: 0px; background-color: white;">
+            <div class="ui-layout layout-flow layout-flow-horizontal">
+                <div class="ui-widget ui-label" style="margin: 8px; background-color: white;">
+                    <span class="label">0</span>
+                </div>
+                <div class="ui-widget stretch-horizontal ui-label"
+                     style="margin: 8px; background-color: white;">
+                    <span class="label" style="width:100%; text-align: center;">Precipitation (mm)</span>
+                </div>
+                <div class="ui-widget ui-label" id="legend-max" style="margin: 8px; background-color: white;">
+                    <span class="label">300</span>
+                </div>
+            </div>
+        </div>
+        <div class="ui-widget bottom-center bottom center positioned ui-thumbnail"
+             style="background-color: white; padding: 1px;">
+            <img src="/static/img/legend.png">
+        </div>
+    </div>
+</div>
 <!-- Boot our JavaScript once the body has loaded. -->
 <script>
     precipitation.boot(
         '{{ key | safe }}');
 
 </script>
+
 
 </body>
 </html>

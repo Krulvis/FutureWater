@@ -1,25 +1,21 @@
 calculations = {};
 
-calculations.resetRadios = function () {
-    var overlayTab = $('#overlay-tab');
-    var graphTab = $('#graph-tab');
-    var graphContent = $('#graph');
-    var overlayContent = $('#overlay');
-
-    switch (precipitation.instance.selectionMethod) {
-        case 'country':
-            //Overlay
-            this.addTo(overlayContent);
-            this.removeFrom(graphContent);
-            break;
-        case 'shapefile':
-            this.addTo(overlayContent);
-            this.removeFrom(graphContent);
-            break;
-        case 'coordinate':
-            this.removeFrom(overlayContent);
-            this.removeFrom(graphContent);
-            break;
+calculations.resetRadios = function (type) {
+    var options = $('.create-options');
+    this.removeFrom(options);
+    if (type === 'graph') {
+        //Should be removed from all
+    } else if (type === 'overlay') {
+        switch (precipitation.instance.selectionMethod) {
+            case 'country':
+                this.addTo(options);
+                break;
+            case 'shapefile':
+                this.addTo(options);
+                break;
+            case 'coordinate':
+                break;
+        }
     }
 };
 
@@ -44,6 +40,16 @@ calculations.html = '<div class="calculations-container form-group">\n' +
     '                                    <input type="radio" id="MEAN" name="calculations"\n' +
     '                                           class="custom-control-input"><label\n' +
     '                                        class="custom-control-label" for="MEAN">Mean</label>\n' +
+    '                                </div>\n' +
+    '                                <div class="custom-control custom-radio custom-control-inline">\n' +
+    '                                    <input type="radio" id="MIN" name="calculations"\n' +
+    '                                           class="custom-control-input"><label\n' +
+    '                                        class="custom-control-label" for="MIN">Min</label>\n' +
+    '                                </div>\n' +
+    '                                <div class="custom-control custom-radio custom-control-inline">\n' +
+    '                                    <input type="radio" id="MAX" name="calculations"\n' +
+    '                                           class="custom-control-input"><label\n' +
+    '                                        class="custom-control-label" for="MAX">Max</label>\n' +
     '                                </div>\n' +
     '                            </div>\n' +
     '                        </div>';

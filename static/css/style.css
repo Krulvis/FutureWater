@@ -15,7 +15,6 @@ body,
     padding: 0px;
     overflow: hidden;
 }
-
 .futurewater .panel {
     position: absolute;
     z-index: 1;
@@ -27,7 +26,7 @@ body,
 }
 
 .futurewater .settings {
-    top: 10px;
+    top: 100px;
     overflow-y: auto;
     overflow-x: hidden;
     max-height: 98%;
@@ -68,7 +67,7 @@ body,
     font-style: oblique;
 }
 
-.futurewater .settings .tab-content {
+.futurewater .settings .method-content {
     padding-top: 20px;
 }
 
@@ -194,11 +193,6 @@ body,
 /* Large screens. */
 
 @media (min-width: 900px) {
-
-    .futurewater .settings .header-container h1 {
-        font-size: 60px;
-    !important;
-    }
 
     .futurewater .settings .logo {
         top: 30px;

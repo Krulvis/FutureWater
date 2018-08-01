@@ -107,11 +107,18 @@ class OverlayHandler(webapp2.RequestHandler):
             print(json_data)
             feature = ee.Feature(json_data)
 
-        overlay = GetOverlayImage(start_date, end_date, feature, product, calculation)
+        collection = GetOverlayImageCollection(start_date, end_date, product)
+        calced = GetCalculatedCollection(collection, calculation)
+        min_max = calced.reduce(ee.Reducer.minMax())
+        min = GetMin(min_max, feature)
+        max = GetMax(min_max, feature)
+        overlay = GetOverlayImage(calced, feature, min, max)
         data = overlay.getMapId()
         values = {
             'mapid': data['mapid'],
             'token': data['token'],
+            'min': min,
+            'max': max,
             'download_url': overlay.getDownloadURL()
         }
         self.response.out.write(json.dumps(values))
@@ -120,19 +127,22 @@ class OverlayHandler(webapp2.RequestHandler):
 class GraphHandler(webapp2.RequestHandler):
 
     def get(self):
+        name = self.request.relative_url
         start_date = self.request.get('startDate')
         end_date = self.request.get('endDate')
         target = self.request.get('target')
         product = self.request.get('product')
         calculation = self.request.get('calculation')
+        timestep = self.request.get('timestep')
         method = self.request.get('method')
         if method == 'coordinate':
             data = json.loads(target)
             print(data)
             features = data['features']
-            content = GetPointsLineSeries(start_date, end_date, product, features)
+            content = GetPointsLineSeries(str(name), start_date, end_date, product, features)
         else:
-            content = GetMonthlySeries(start_date, end_date, target, method)
+            content = GetOverlayGraphSeries(str(name), start_date, end_date, target, method, product.split(","),
+                                            timestep)
         self.response.headers['Content-Type'] = 'application/json'
         self.response.out.write(content)
 
@@ -149,34 +159,46 @@ app = webapp2.WSGIApplication([
 #                                Overlay                                      #
 ###############################################################################
 
-def GetOverlayImage(start_date, end_date, region, product_name, calculation):
-    """Map for displaying summed up images of specified measurement"""
+def GetOverlayImageCollection(start_date, end_date, product_name):
     start_date = ee.Date(start_date)
     end_date = ee.Date(end_date)
     product = GetProductForName(product_name)
-    images = product['collection'].filterDate(start_date, end_date)
-    image = None
-    if calculation == 'sum':
-        images = images.sum().clip(region)
-        image = images.visualize(min=0, max=3000, palette='800000, ff9900, fbf606, 008000, 0099ff')
-    if calculation == 'mean':
-        images = images.mean().clip(region)
-        image = images.visualize(min=0, max=300, palette='800000, ff9900, fbf606, 008000, 0099ff')
+    return product['collection'].filterDate(start_date, end_date)
 
-    # export_task = ee.batch.Export.image.toDrive(image, 'Export_Image', scale=5000, maxPixels=1e9)
-    # export_task.start()
-    return image
+
+def GetCalculatedCollection(images, calculation):
+    if calculation == 'mean':
+        return images.mean()
+    if calculation == 'sum':
+        return images.sum()
+    if calculation == 'min':
+        return images.min()
+    if calculation == 'max':
+        return images.max()
+
+
+def GetMax(min_max, region):
+    maximum = min_max.select('max').reduceRegion(ee.Reducer.max(), region, 5000)
+    return ee.Number(maximum.get('max')).getInfo()
+
+
+def GetMin(min_max, region):
+    minmum = min_max.select('min').reduceRegion(ee.Reducer.min(), region, 5000)
+    return ee.Number(minmum.get('min')).getInfo()
+
+
+def GetOverlayImage(images, region, min, max):
+    """Map for displaying summed up images of specified measurement"""
+    return images.clip(region).visualize(min=min, max=max, palette='FF00E7, FF2700, FDFF92, 0000FF, 000000')
 
 
 ###############################################################################
 #                                Graph For Points.                            #
 ###############################################################################
 
-def GetPointsLineSeries(start_date, end_date, product, point_features):
-    combined_title = [point_features[i]['geometry']['coordinates'] for i in range(len(point_features))]
-    cache_title = str(combined_title) + start_date + end_date
+def GetPointsLineSeries(details_name, start_date, end_date, product, point_features):
     # Get from cache
-    json_data = memcache.get(cache_title)
+    json_data = memcache.get(details_name)
     if json_data is not None:
         print('From Cache:')
         print(json_data)
@@ -199,7 +221,7 @@ def GetPointsLineSeries(start_date, end_date, product, point_features):
         graph = OrderForGraph(details)
         json_data = json.dumps(graph)
         # Store the results in memcache.
-        memcache.add(cache_title, json_data, MEMCACHE_EXPIRATION)
+        memcache.add(details_name, json_data, MEMCACHE_EXPIRATION)
     except (ee.EEException, HTTPException):
         # Handle exceptions from the EE client library.
         e = sys.exc_info()[0]
@@ -208,6 +230,7 @@ def GetPointsLineSeries(start_date, end_date, product, point_features):
         json_data = json.dumps(details)
     finally:
         # Send the results to the browser.
+        print("Done getting JSON")
         return json_data
 
 
@@ -237,9 +260,8 @@ def GetPointData(start_date, months, product, point_feature):
 #                                Graph For Regions.                           #
 ###############################################################################
 
-def GetMonthlySeries(start_date, end_date, target, method):
+def GetOverlayGraphSeries(details_name, start_date, end_date, target, method, products, timestep):
     """Returns data to draw graphs with"""
-    details_name = target + start_date + end_date
     json_data = memcache.get(details_name)
     # If we've cached details for this polygon, return them.
     if json_data is not None:
@@ -260,7 +282,8 @@ def GetMonthlySeries(start_date, end_date, target, method):
     try:
         print('NOT CACHE:')
         for product in PRODUCTS:
-            details[product['name']] = ComputeMonthlyTimeSeries(start_date, end_date, region, product)
+            if product['name'] in products:
+                details[product['name']] = ComputeGraphSeries(start_date, end_date, region, product, timestep)
         print(details)
         graph = OrderForGraph(details)
         json_data = json.dumps(graph)
@@ -277,23 +300,24 @@ def GetMonthlySeries(start_date, end_date, target, method):
         return json_data
 
 
-def ComputeMonthlyTimeSeries(start_date, end_date, region, product):
+def ComputeGraphSeries(start_date, end_date, region, product, timestep):
     start_date = ee.Date(start_date)
     end_date = ee.Date(end_date)
-    months = ee.List.sequence(0, end_date.difference(start_date, 'month').toInt())
+    months = ee.List.sequence(0, end_date.difference(start_date, timestep).toInt())
 
     # Create base months
-    def CalculateForMonth(count):
-        m = start_date.advance(count, 'month')
-        img = product['collection'].filterDate(m, ee.Date(m).advance(1, 'month')).sum().reduceRegion(
+    def CalculateTimeStep(count):
+        m = start_date.advance(count, timestep)
+        img = product['collection'].filterDate(m, ee.Date(m).advance(1, timestep)).sum().reduceRegion(
             ee.Reducer.mean(), region,
             product['scale'])
         return ee.Feature(None, {
-            'system:time_start': m.format('MM-YYYY'),
+            'system:time_start': m.format(
+                'DD-MM-YYYY' if timestep == 'day' else 'MM-YYYY' if timestep == 'month' else 'YYYY'),
             'value': img.values().get(0)
         })
 
-    chart_data = months.map(CalculateForMonth).getInfo()
+    chart_data = months.map(CalculateTimeStep).getInfo()
 
     def ExtractMean(feature):
         return [feature['properties']['system:time_start'], feature['properties']['value']]
@@ -331,7 +355,7 @@ def GetCountryFeature(country):
 def OrderForGraph(details):
     """Generates a multi-dimensional array of information to be displayed in the Graphs"""
     # Create first row of columns
-    first_row = ['Month']
+    first_row = ['Date']
     for i in details:
         first_row.append(i)
 
@@ -439,11 +463,11 @@ PRODUCTS = [
         'name': 'GLDAS',
         'collection': GLDAS,
         'scale': 30000
-    },
-    {
-        'name': 'MOD16',
-        'collection': MOD16,
-        'scale': 500
-
     }
 ]
+# {
+#     'name': 'MOD16',
+#     'collection': MOD16,
+#     'scale': 500
+#
+# }

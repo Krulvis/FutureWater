@@ -47,6 +47,7 @@ precipitation.App = function () {
 
     //Respond to radio button clicks (switching input style)
     $('.method-container .nav-item').on('click', this.switchStyle.bind(this));
+    $('.create-buttons .nav-item').on('click', this.switchOutput.bind(this));
 
     //Adds a marker for given input
     $('.add-marker').on('click', markers.addMarkerFromForm.bind(this));
@@ -68,7 +69,7 @@ precipitation.App = function () {
         this.target = '_blank';
     });
 
-    //this.map.controls[google.maps.ControlPosition.TOP_CENTER].push(document.getElementById('legend'));
+    this.map.controls[google.maps.ControlPosition.TOP_CENTER].push(document.getElementById('legend'));
 };
 
 /**
@@ -79,10 +80,13 @@ precipitation.App.prototype.initVals = function () {
     this.selectedCountry = null;
     this.markers = [];
     this.selectionMethod = 'country';
+    this.selectionType = 'graph';
     this.chartData = null;
     this.chartTitle = 'Chart';
-    products.resetRadios();
-    calculations.resetRadios();
+    timesteps.resetRadios(this.selectionType);
+    calculations.resetRadios(this.selectionType);
+    products.resetRadios(this.selectionType);
+
 };
 
 /**
@@ -127,13 +131,14 @@ precipitation.App.prototype.getOverlay = function () {
     var overlay = $('#overlay');
     var downloadImg = $('.download-img');
     var downloadCSV = $('.download-csv');
-    var product = this.getProduct(overlay);
-    var calculation = this.getCalculation(overlay);
+    var product = this.getProduct();
+    var timestep = this.getTimestep();
+    var calculation = this.getCalculation();
     if (!this.checkRegion(false, product, calculation)) {
         return;
     }
     $.ajax({
-        url: '/overlay?startDate=' + startDate + '&endDate=' + endDate + '&method=' + this.selectionMethod + '&product=' + product + '&calculation=' + calculation + '&target=' + this.getTarget(),
+        url: '/overlay?startDate=' + startDate + '&endDate=' + endDate + '&method=' + this.selectionMethod + '&product=' + product + '&calculation=' + calculation + '&target=' + this.getTarget() + '&timestep=' + timestep,
         method: 'GET',
         beforeSend: function () {
             button.html('Loading map overlay...');
@@ -154,6 +159,8 @@ precipitation.App.prototype.getOverlay = function () {
             var jsonObj = $.parseJSON(data);
             var mapId = jsonObj['mapid'];
             var token = jsonObj['token'];
+            $('#legend-max span').html(precipitation.App.format(jsonObj['max']));
+            $('#legend-min span').html(precipitation.App.format(jsonObj['min']));
             downloadImg.show();
             $('#download-img-btn').attr("href", jsonObj['download_url']);
             this.addOverlay(mapId, token, calculation);
@@ -171,13 +178,15 @@ precipitation.App.prototype.getGraph = function () {
     var graph = $('#graph');
     var downloadImg = $('.download-img');
     var downloadCSV = $('.download-csv');
-    var product = this.getProduct(graph);
-    var calculation = this.getCalculation(graph);
+    var product = this.getProduct();
+    var calculation = this.getCalculation();
+    var timestep = this.getTimestep();
     if (!this.checkRegion(true, product, calculation)) {
         return;
     }
     $.ajax({
-        url: '/graph?startDate=' + startDate + '&endDate=' + endDate + '&method=' + this.selectionMethod + '&product=' + product + '&calculation=' + calculation + '&target=' + this.getTarget(),
+        url: '/graph?startDate=' + startDate + '&endDate=' + endDate + '&method=' + this.selectionMethod
+        + '&product=' + product + '&calculation=' + calculation + '&target=' + this.getTarget() + '&timestep=' + timestep,
         method: 'GET',
         beforeSend: function () {
             downloadCSV.hide();
@@ -307,8 +316,6 @@ precipitation.App.prototype.showChart = function () {
  */
 precipitation.App.prototype.addOverlay = function (eeMapId, eeToken, calculation) {
     var legend = $('#legend');
-    var max = (calculation === 'sum' ? '3000' : '300');
-    legend.find('#legend-max').html(max);
     legend.show();
     console.log('MapID: ' + eeMapId + ', Token: ' + eeToken);
     var overlay = new google.maps.ImageMapType({
@@ -389,24 +396,40 @@ precipitation.App.prototype.switchStyle = function (event) {
             markers.draw(false);
             break;
     }
-    products.resetRadios();
-    calculations.resetRadios();
+    timesteps.resetRadios(this.selectionType);
+    calculations.resetRadios(this.selectionType);
+    products.resetRadios(this.selectionType);
+};
+
+/**
+ * Changes the option menu depending on which type= [overlay/graph] is clicked
+ * @param event
+ */
+precipitation.App.prototype.switchOutput = function (event) {
+    var method = this.selectionMethod;
+    var type = $(event.target).text().toLowerCase();
+    this.selectionType = type;
+    timesteps.resetRadios(type);
+    calculations.resetRadios(type);
+    products.resetRadios(type);
 };
 
 /**
  * Returns the selected Analysing Method
  * @returns {string}
  */
-precipitation.App.prototype.getProduct = function (element) {
-    var container = element.find('.products-container');
+precipitation.App.prototype.getProduct = function () {
+    var container = $('.products-container');
     if (container.length === 0) {
         return 'null';
     } else {
-        var id = container.find('input:radio:checked').attr('id');
-        if (id === undefined) {
-            return 'null';
-        }
-        return id.toUpperCase();
+        var elems = container.find('input:checked');
+        console.log(elems);
+        var ids = [];
+        elems.each(function () {
+            ids.push($(this).attr('id').toUpperCase());
+        });
+        return ids.join(',');
     }
 };
 
@@ -414,8 +437,25 @@ precipitation.App.prototype.getProduct = function (element) {
  * Returns the selected Analysing Method
  * @returns {string}
  */
-precipitation.App.prototype.getCalculation = function (element) {
-    var container = element.find('.calculations-container');
+precipitation.App.prototype.getTimestep = function () {
+    var container = $('.timesteps-container');
+    if (container.length === 0) {
+        return 'null';
+    } else {
+        var id = container.find('input:radio:checked').attr('id');
+        if (id === undefined) {
+            return 'null';
+        }
+        return id.toLowerCase();
+    }
+};
+
+/**
+ * Returns the selected Analysing Method
+ * @returns {string}
+ */
+precipitation.App.prototype.getCalculation = function () {
+    var container = $('.calculations-container');
     if (container.length === 0) {
         return 'null';
     } else {
@@ -461,6 +501,10 @@ precipitation.App.graphToCSV = function (dataTable) {
     });
     csv.unshift(fields.join(','));
     return csv.join('\r\n');
+};
+
+precipitation.App.format = function (value) {
+    return parseFloat(Math.round(value * 100) / 100).toFixed(2);
 };
 
 precipitation.App.EE_URL = 'https://earthengine.googleapis.com';

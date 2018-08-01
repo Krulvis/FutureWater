@@ -1,0 +1,63 @@
+
+.header-container {
+    height: 110px;
+    column-count: 4;
+    -moz-column-count: 4;
+    -webkit-column-count: 4;
+    border-bottom: 5px solid #1aa3b9;
+}
+
+.header-container .advertisement {
+    height: 110px;
+    white-space: nowrap;
+    text-align: left;
+}
+
+.header-container .helper {
+    display: inline-block;
+    height: 100%;
+    vertical-align: middle;
+}
+
+.header-container .advertisement img {
+    vertical-align: middle;
+    width: 70%;
+    max-height: 110px;
+}
+
+.header-container .page-header {
+    height: 110px;
+}
+
+.header-container .page-header .raincloud {
+    height: 80px;
+    width: 100px;
+}
+
+.header-container .page-header .raincloud-logo {
+    text-align: right;
+}
+
+.header-container .page-header .app-title {
+    margin-top: 30px;
+}
+
+.header-container .page-header .app-title h1 {
+    color: #1aa3b9;
+    font-weight: bold;
+}
+
+.header-container .extra {
+    text-align: right;
+}
+
+.header-container .extra .buttons {
+    text-align: left;
+    color: #007bff;
+    text-decoration: none;
+    background-color: transparent;
+}
+
+.header-container .extra .buttons .information:hover {
+    cursor: pointer;
+}
