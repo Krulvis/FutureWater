@@ -52,6 +52,9 @@ precipitation.App = function () {
     //Adds a marker for given input
     $('.add-marker').on('click', markers.addMarkerFromForm.bind(this));
 
+    //Validates the shape file link
+    $('.check-shapefile').on('click', this.validateShapefile.bind(this));
+
     //Add functionality to buttons
     $('#overlay-button').on('click', function (event) {
         precipitation.instance.getOverlay();
@@ -134,7 +137,8 @@ precipitation.App.prototype.getOverlay = function () {
     var product = this.getProduct();
     var timestep = this.getTimestep();
     var calculation = this.getCalculation();
-    if (!this.checkRegion(false, product, calculation)) {
+    var error = $('#error-message');
+    if (!this.checkSelections(product, calculation, timestep)) {
         return;
     }
     $.ajax({
@@ -144,26 +148,28 @@ precipitation.App.prototype.getOverlay = function () {
             button.html('Loading map overlay...');
             downloadImg.hide();
             downloadCSV.hide();
+            error.hide();
             precipitation.instance.clearOverlays();
         },
         error: function (data) {
             button.html('error');
-            $('#error-message').show().html('Error obtaining data!');
+            error.show().html('Error obtaining data!');
         }
     }).done((function (data) {
         if (data['error']) {
-            $('#error-message').show().html('Error: ' + data['error']);
+            error.show().html('Error: ' + data['error']);
         } else {
-            $('#error-message').show().html('Map is being drawn... Please wait before drawing new map!');
+            error.show().html('Map is being drawn... Please wait before drawing new map!');
             button.html(precipitation.App.OVERLAY_BASE_BUTTON_NAME);
-            var jsonObj = $.parseJSON(data);
-            var mapId = jsonObj['mapid'];
-            var token = jsonObj['token'];
-            $('#legend-max span').html(precipitation.App.format(jsonObj['max']));
-            $('#legend-min span').html(precipitation.App.format(jsonObj['min']));
+            var mapId = data['mapid'];
+            var token = data['token'];
+            $('#legend-max span').html(precipitation.App.format(data['max']));
+            $('#legend-min span').html(precipitation.App.format(data['min']));
             downloadImg.show();
-            $('#download-img-btn').attr("href", jsonObj['download_url']);
-            this.addOverlay(mapId, token, calculation);
+            $('#download-img-btn').attr("href", data['download_url']);
+            var legend = $('#legend');
+            legend.show();
+            this.addOverlay(mapId, token);
         }
     }).bind(this));
 };
@@ -181,7 +187,8 @@ precipitation.App.prototype.getGraph = function () {
     var product = this.getProduct();
     var calculation = this.getCalculation();
     var timestep = this.getTimestep();
-    if (!this.checkRegion(true, product, calculation)) {
+    var error = $('#error-message');
+    if (!this.checkSelections(product, calculation, timestep)) {
         return;
     }
     $.ajax({
@@ -191,15 +198,16 @@ precipitation.App.prototype.getGraph = function () {
         beforeSend: function () {
             downloadCSV.hide();
             downloadImg.hide();
+            error.hide();
             button.html('Loading...');
         }, error: function (data) {
             button.html('error');
-            $('#error-message').show().html(data['error']);
+            error.show().html(data['error']);
         }
     }).done((function (data) {
         if (data['error']) {
             button.html(precipitation.App.GRAPH_BASE_BUTTON_NAME);
-            $('#error-message').show().html(data['error']);
+            error.show().html(data['error']);
         } else {
             button.html(precipitation.App.GRAPH_BASE_BUTTON_NAME);
             this.chartTitle = this.selectionMethod === 'country' ? this.selectedCountry.getProperty('Country') : this.selectionMethod === 'coordinate' ? 'Markers' : 'ShapeFile';
@@ -215,29 +223,44 @@ precipitation.App.prototype.getGraph = function () {
  * Returns true if anything is selected
  * @returns {boolean}
  */
-precipitation.App.prototype.checkRegion = function (graph, product, calculation) {
+precipitation.App.prototype.checkSelections = function (product, calculation, timestep) {
     var error = $('#error-message');
-    error.show().html('');
+    error.hide();
     switch (this.selectionMethod) {
         case 'country':
             if (this.selectedCountry === null) {
                 error.show().html('Select a Country first!');
                 return false;
-            } else if (!graph && (calculation === 'null' || product === 'null')) {
-                error.show().html('Select a calculation and product first!')
             }
             break;
         case 'coordinate':
             if (this.markers.length === 0) {
                 error.show().html('Create a Marker first (or click on map)!');
                 return false;
-            } else if (graph && product === 'null') {
-                error.show().html('Select a product first!');
-                return false;
             }
             break;
         case 'shapefile':
+            var link = $('#shapefile-link').val();
+            if (link.length === 0) {
+                error.show().html('Add a link retrieved from <a href="https://code.earthengine.google.com/">Google EE API</a>');
+                return false;
+            }
+            // else if ($('.validated-shapefile').css('display') === 'none') {
+            //     error.show().html('Please validate the Shapefile first!');
+            //     return false;
+            // }
             break;
+    }
+    console.log('Prodcut: ' + product + ', Calculation: ' + calculation + ', Timestep: ' + timestep);
+    if (product === 'error') {
+        error.show().html('Select at least one Product first!');
+        return false;
+    } else if (timestep === 'error') {
+        error.show().html('Select a Timestep first!');
+        return false;
+    } else if (calculation === 'error') {
+        error.show().html('Select a Calculation method first!');
+        return false;
     }
     return true;
 };
@@ -314,13 +337,14 @@ precipitation.App.prototype.showChart = function () {
  * @param eeToken
  * @param calculation
  */
-precipitation.App.prototype.addOverlay = function (eeMapId, eeToken, calculation) {
-    var legend = $('#legend');
-    legend.show();
+precipitation.App.prototype.addOverlay = function (eeMapId, eeToken) {
     console.log('MapID: ' + eeMapId + ', Token: ' + eeToken);
+    var bounds = new google.maps.LatLngBounds();
+    var maxZoom = 5;
     var overlay = new google.maps.ImageMapType({
         getTileUrl: function (tile, zoom) {
             var url = precipitation.App.EE_URL + '/map/';
+            maxZoom = zoom > maxZoom ? zoom : maxZoom;
             url += [eeMapId, zoom, tile.x, tile.y].join('/');
             url += '?token=' + eeToken;
             return url;
@@ -329,6 +353,9 @@ precipitation.App.prototype.addOverlay = function (eeMapId, eeToken, calculation
     });
 
     this.map.overlayMapTypes.push(overlay);
+    //this.map.fitBounds(bounds);
+    //this.map.setZoom(maxZoom);
+
 };
 
 
@@ -424,11 +451,14 @@ precipitation.App.prototype.getProduct = function () {
         return 'null';
     } else {
         var elems = container.find('input:checked');
-        console.log(elems);
         var ids = [];
         elems.each(function () {
             ids.push($(this).attr('id').toUpperCase());
         });
+        if (ids.length === 0) {
+            console.log('No Product selected!');
+            return 'error';
+        }
         return ids.join(',');
     }
 };
@@ -444,7 +474,8 @@ precipitation.App.prototype.getTimestep = function () {
     } else {
         var id = container.find('input:radio:checked').attr('id');
         if (id === undefined) {
-            return 'null';
+            console.log('No timestep collected');
+            return 'error';
         }
         return id.toLowerCase();
     }
@@ -461,7 +492,8 @@ precipitation.App.prototype.getCalculation = function () {
     } else {
         var id = container.find('input:radio:checked').attr('id');
         if (id === undefined) {
-            return 'null';
+            console.log('No Calculation selected');
+            return 'error';
         }
         return id.toLowerCase();
     }
@@ -475,13 +507,41 @@ precipitation.App.prototype.getTarget = function () {
         case "country":
             return this.selectedCountry.getProperty('Country');
         case 'shapefile':
-            return null;
+            return $('#shapefile-link').val();
         case 'coordinate':
             return markers.getJSON();
         default:
             $('#error-message').show().html('Please select a method of targeting first!');
             return 'null';
     }
+};
+
+/**
+ * Validates the given shapefile link
+ */
+precipitation.App.prototype.validateShapefile = function () {
+    var link = $('#shapefile-link').val();
+    console.log('Validating: ' + link);
+    $.ajax({
+        url: '/shapefile?link=' + link,
+        method: 'GET',
+        beforeSend: function () {
+            $('.validated-shapefile').hide();
+        }, error: function (data) {
+            error.show().html(data['error']);
+        }
+    }).done((function (data) {
+        console.log(data);
+        console.log(data['success']);
+        if (data['error']) {
+            error.show().html(data['error']);
+        } else if (data['success'] === 'true') {
+            console.log('Validated Shapefile!');
+            $('.validated-shapefile').show();
+            //this.addOverlay(data['mapId'], data['token']);
+        }
+    }).bind(this));
+
 };
 
 /**

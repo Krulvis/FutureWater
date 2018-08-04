@@ -99,29 +99,40 @@ class OverlayHandler(webapp2.RequestHandler):
         product = self.request.get('product')
         calculation = self.request.get('calculation')
         method = self.request.get('method')
-
+        values = {}
         if method == 'country':
             feature = GetCountryFeature(target)
+            values['center'] = feature.centroid()
+        elif method == 'shapefile':
+            feature = GetShapeFileFeature(target)
+            values['center'] = feature.centroid()
         else:
             json_data = json.loads(target)
             print(json_data)
             feature = ee.Feature(json_data)
 
-        collection = GetOverlayImageCollection(start_date, end_date, product)
-        calced = GetCalculatedCollection(collection, calculation)
-        min_max = calced.reduce(ee.Reducer.minMax())
-        min = GetMin(min_max, feature)
-        max = GetMax(min_max, feature)
-        overlay = GetOverlayImage(calced, feature, min, max)
-        data = overlay.getMapId()
-        values = {
-            'mapid': data['mapid'],
-            'token': data['token'],
-            'min': min,
-            'max': max,
-            'download_url': overlay.getDownloadURL()
-        }
-        self.response.out.write(json.dumps(values))
+        try:
+            collection = GetOverlayImageCollection(start_date, end_date, product)
+            calced = GetCalculatedCollection(collection, calculation)
+            min_max = calced.reduce(ee.Reducer.minMax())
+            min = GetMin(min_max, feature)
+            max = GetMax(min_max, feature)
+            overlay = GetOverlayImage(calced, feature, min, max)
+            data = overlay.getMapId()
+            values = {
+                'mapid': data['mapid'],
+                'token': data['token'],
+                'min': min,
+                'max': max,
+                'download_url': overlay.getDownloadURL()
+            }
+        except (ee.EEException, HTTPException):
+            # Handle exceptions from the EE client library.
+            e = sys.exc_info()[0]
+            values['error'] = ErrorHandling(e)
+        finally:
+            self.response.headers['Content-Type'] = 'application/json'
+            self.response.out.write(json.dumps(values))
 
 
 class GraphHandler(webapp2.RequestHandler):
@@ -147,10 +158,33 @@ class GraphHandler(webapp2.RequestHandler):
         self.response.out.write(content)
 
 
+class SFHandler(webapp2.RequestHandler):
+
+    def get(self):
+        link = self.request.get('link')
+        fc = ee.FeatureCollection(link)
+        print(fc.getInfo())
+        data = {}
+        data['success'] = 'true'
+        self.response.headers['Content-Type'] = 'application/json'
+        self.response.out.write(json.dumps(data))
+
+
+class TestHandler(webapp2.RequestHandler):
+
+    def get(self):
+        path = os.path.join(os.path.split(__file__)[0], 'static/shapefiles/Kalanga2.zip')
+        with open(path) as f:
+            features = ee.FeatureCollection(f)
+            print(features.getInfo())
+
+
 # http://webapp-improved.appspot.com/tutorials/quickstart.html
 app = webapp2.WSGIApplication([
     ('/overlay', OverlayHandler),
     ('/graph', GraphHandler),
+    ('/test', TestHandler),
+    ('/shapefile', SFHandler),
     ('/', MainHandler),
 ])
 
@@ -225,7 +259,6 @@ def GetPointsLineSeries(details_name, start_date, end_date, product, point_featu
     except (ee.EEException, HTTPException):
         # Handle exceptions from the EE client library.
         e = sys.exc_info()[0]
-        print(e)
         details['error'] = ErrorHandling(e)
         json_data = json.dumps(details)
     finally:
@@ -273,6 +306,8 @@ def GetOverlayGraphSeries(details_name, start_date, end_date, target, method, pr
     details = {}
     if method == 'country':
         region = GetCountryFeature(target)
+    elif method == 'shapefile':
+        region = GetShapeFileFeature(target)
     else:
         json_data = json.loads(target)
         print(json_data)
@@ -292,7 +327,6 @@ def GetOverlayGraphSeries(details_name, start_date, end_date, target, method, pr
     except (ee.EEException, HTTPException):
         # Handle exceptions from the EE client library.
         e = sys.exc_info()[0]
-        print(e)
         details['error'] = ErrorHandling(e)
         json_data = json.dumps(details)
     finally:
@@ -352,6 +386,10 @@ def GetCountryFeature(country):
     #     return collections.filterMetadata('Country', 'equals', country)
 
 
+def GetShapeFileFeature(shapefile):
+    return ee.FeatureCollection(shapefile).geometry().dissolve()
+
+
 def OrderForGraph(details):
     """Generates a multi-dimensional array of information to be displayed in the Graphs"""
     # Create first row of columns
@@ -382,6 +420,7 @@ def OrderForGraph(details):
 
 def ErrorHandling(e):
     print('Error getting graph data ERROR CAUGHT')
+    print(str(e))
     return 'Area too large' if e is HTTPException else str(e)
 
 

@@ -15,6 +15,7 @@ body,
     padding: 0px;
     overflow: hidden;
 }
+
 .futurewater .panel {
     position: absolute;
     z-index: 1;
@@ -69,6 +70,10 @@ body,
 
 .futurewater .settings .method-content {
     padding-top: 20px;
+}
+
+.futurewater .settings .validated-shapefile {
+    display: none;
 }
 
 .futurewater .settings .markers .form-control {

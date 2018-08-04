@@ -118,11 +118,23 @@
                     </div>
                     <!-- ShapeFile Options -->
                     <div id="shapefile" class="tab-pane fade">
-                        <div class="input-group input-file">
+                        <div class="input-group input-file" hidden>
                             <input type="text" class="form-control" placeholder='Choose a file...'/>
                             <span class="input-group-btn">
                                 <button class="btn btn-default btn-choose" type="button">Choose</button>
                             </span>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-8">
+                                <input type="text" class="form-control" id="shapefile-link"
+                                       placeholder="Shapefile link: users/****/****">
+
+                            </div>
+                            <div class="col-md-4">
+                                <button class="btn btn-success check-shapefile" onclick="return false;">
+                                    <i class="fas fa-check fa-lg validated-shapefile"></i> Validate Shapefile
+                                </button>
+                            </div>
                         </div>
                     </div>
                     <!-- Markers Options-->
