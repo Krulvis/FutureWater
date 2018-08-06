@@ -42,7 +42,7 @@ timesteps.html = function (type) {
     var disabled = type === 'overlay' ? 'disabled' : '';
     var checked = type === 'overlay' ? 'checked' : '';
     return '<div class="timesteps-container form-group">\n' +
-        '                            <label class="bold" for="timesteps">Choose TimeStep</label>\n' +
+        '                            <label class="bold" for="timesteps">Choose Time Step</label>\n' +
         '                            <div id="timesteps">\n' +
         '                                <div class="custom-control custom-radio custom-control-inline">\n' +
         '                                    <input type="radio" id="DAY" name="timesteps" class="custom-control-input" ' + checked + '><label\n' +

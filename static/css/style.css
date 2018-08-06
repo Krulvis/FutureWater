@@ -30,7 +30,9 @@ body,
     top: 100px;
     overflow-y: auto;
     overflow-x: hidden;
-    max-height: 98%;
+    max-height: 90%;
+    max-width: 600px;
+    font-size: 14px;
 }
 
 .futurewater .settings .container h1 {

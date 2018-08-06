@@ -97,15 +97,15 @@ class OverlayHandler(webapp2.RequestHandler):
         end_date = self.request.get('endDate')
         target = self.request.get('target')
         product = self.request.get('product')
-        calculation = self.request.get('calculation')
+        statistic = self.request.get('statistic')
         method = self.request.get('method')
         values = {}
         if method == 'country':
             feature = GetCountryFeature(target)
-            values['center'] = feature.centroid()
+            # values['center'] = feature.centroid().getInfo()['coordinates']
         elif method == 'shapefile':
             feature = GetShapeFileFeature(target)
-            values['center'] = feature.centroid()
+            # values['center'] = feature.centroid().getInfo()['coordinates']
         else:
             json_data = json.loads(target)
             print(json_data)
@@ -113,19 +113,17 @@ class OverlayHandler(webapp2.RequestHandler):
 
         try:
             collection = GetOverlayImageCollection(start_date, end_date, product)
-            calced = GetCalculatedCollection(collection, calculation)
+            calced = GetCalculatedCollection(collection, statistic)
             min_max = calced.reduce(ee.Reducer.minMax())
             min = GetMin(min_max, feature)
             max = GetMax(min_max, feature)
             overlay = GetOverlayImage(calced, feature, min, max)
             data = overlay.getMapId()
-            values = {
-                'mapid': data['mapid'],
-                'token': data['token'],
-                'min': min,
-                'max': max,
-                'download_url': overlay.getDownloadURL()
-            }
+            values['mapid'] = data['mapid']
+            values['token'] = data['token']
+            values['min'] = min
+            values['max'] = max
+            values['download_url'] = overlay.getDownloadURL()
         except (ee.EEException, HTTPException):
             # Handle exceptions from the EE client library.
             e = sys.exc_info()[0]
@@ -143,7 +141,7 @@ class GraphHandler(webapp2.RequestHandler):
         end_date = self.request.get('endDate')
         target = self.request.get('target')
         product = self.request.get('product')
-        calculation = self.request.get('calculation')
+        statistic = self.request.get('statistic')
         timestep = self.request.get('timestep')
         method = self.request.get('method')
         if method == 'coordinate':
@@ -200,14 +198,14 @@ def GetOverlayImageCollection(start_date, end_date, product_name):
     return product['collection'].filterDate(start_date, end_date)
 
 
-def GetCalculatedCollection(images, calculation):
-    if calculation == 'mean':
+def GetCalculatedCollection(images, statistic):
+    if statistic == 'mean':
         return images.mean()
-    if calculation == 'sum':
+    if statistic == 'sum':
         return images.sum()
-    if calculation == 'min':
+    if statistic == 'min':
         return images.min()
-    if calculation == 'max':
+    if statistic == 'max':
         return images.max()
 
 

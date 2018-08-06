@@ -20,7 +20,9 @@ precipitation.App = function () {
 
     //Some styling (responsiveness of results panel)
     var results = $('.results');
+    var settings = $('.settings');
     results.draggable().resizable();
+    settings.draggable();
     results.on('resizestop', function () {
         console.log('Resize complete');
         precipitation.instance.showChart();
@@ -72,7 +74,7 @@ precipitation.App = function () {
         this.target = '_blank';
     });
 
-    this.map.controls[google.maps.ControlPosition.TOP_CENTER].push(document.getElementById('legend'));
+    this.map.controls[google.maps.ControlPosition.TOP_RIGHT].push(document.getElementById('legend'));
 };
 
 /**
@@ -87,7 +89,7 @@ precipitation.App.prototype.initVals = function () {
     this.chartData = null;
     this.chartTitle = 'Chart';
     timesteps.resetRadios(this.selectionType);
-    calculations.resetRadios(this.selectionType);
+    statistics.resetRadios(this.selectionType);
     products.resetRadios(this.selectionType);
 
 };
@@ -136,13 +138,13 @@ precipitation.App.prototype.getOverlay = function () {
     var downloadCSV = $('.download-csv');
     var product = this.getProduct();
     var timestep = this.getTimestep();
-    var calculation = this.getCalculation();
+    var statistic = this.getStatistic();
     var error = $('#error-message');
-    if (!this.checkSelections(product, calculation, timestep)) {
+    if (!this.checkSelections(product, statistic, timestep)) {
         return;
     }
     $.ajax({
-        url: '/overlay?startDate=' + startDate + '&endDate=' + endDate + '&method=' + this.selectionMethod + '&product=' + product + '&calculation=' + calculation + '&target=' + this.getTarget() + '&timestep=' + timestep,
+        url: '/overlay?startDate=' + startDate + '&endDate=' + endDate + '&method=' + this.selectionMethod + '&product=' + product + '&statistic=' + statistic + '&target=' + this.getTarget() + '&timestep=' + timestep,
         method: 'GET',
         beforeSend: function () {
             button.html('Loading map overlay...');
@@ -185,15 +187,15 @@ precipitation.App.prototype.getGraph = function () {
     var downloadImg = $('.download-img');
     var downloadCSV = $('.download-csv');
     var product = this.getProduct();
-    var calculation = this.getCalculation();
+    var statistic = this.getStatistic();
     var timestep = this.getTimestep();
     var error = $('#error-message');
-    if (!this.checkSelections(product, calculation, timestep)) {
+    if (!this.checkSelections(product, statistic, timestep)) {
         return;
     }
     $.ajax({
         url: '/graph?startDate=' + startDate + '&endDate=' + endDate + '&method=' + this.selectionMethod
-        + '&product=' + product + '&calculation=' + calculation + '&target=' + this.getTarget() + '&timestep=' + timestep,
+        + '&product=' + product + '&statistic=' + statistic + '&target=' + this.getTarget() + '&timestep=' + timestep,
         method: 'GET',
         beforeSend: function () {
             downloadCSV.hide();
@@ -223,7 +225,7 @@ precipitation.App.prototype.getGraph = function () {
  * Returns true if anything is selected
  * @returns {boolean}
  */
-precipitation.App.prototype.checkSelections = function (product, calculation, timestep) {
+precipitation.App.prototype.checkSelections = function (product, statistic, timestep) {
     var error = $('#error-message');
     error.hide();
     switch (this.selectionMethod) {
@@ -251,15 +253,15 @@ precipitation.App.prototype.checkSelections = function (product, calculation, ti
             // }
             break;
     }
-    console.log('Prodcut: ' + product + ', Calculation: ' + calculation + ', Timestep: ' + timestep);
+    console.log('Prodcut: ' + product + ', statistic: ' + statistic + ', Timestep: ' + timestep);
     if (product === 'error') {
         error.show().html('Select at least one Product first!');
         return false;
     } else if (timestep === 'error') {
         error.show().html('Select a Timestep first!');
         return false;
-    } else if (calculation === 'error') {
-        error.show().html('Select a Calculation method first!');
+    } else if (statistic === 'error') {
+        error.show().html('Select a statistic method first!');
         return false;
     }
     return true;
@@ -335,11 +337,11 @@ precipitation.App.prototype.showChart = function () {
  * Fires event on done loading map
  * @param eeMapId
  * @param eeToken
- * @param calculation
+ * @param statistic
  */
 precipitation.App.prototype.addOverlay = function (eeMapId, eeToken) {
     console.log('MapID: ' + eeMapId + ', Token: ' + eeToken);
-    var bounds = new google.maps.LatLngBounds();
+    //var bounds = new google.maps.LatLngBounds();
     var maxZoom = 5;
     var overlay = new google.maps.ImageMapType({
         getTileUrl: function (tile, zoom) {
@@ -424,7 +426,7 @@ precipitation.App.prototype.switchStyle = function (event) {
             break;
     }
     timesteps.resetRadios(this.selectionType);
-    calculations.resetRadios(this.selectionType);
+    statistics.resetRadios(this.selectionType);
     products.resetRadios(this.selectionType);
 };
 
@@ -437,7 +439,7 @@ precipitation.App.prototype.switchOutput = function (event) {
     var type = $(event.target).text().toLowerCase();
     this.selectionType = type;
     timesteps.resetRadios(type);
-    calculations.resetRadios(type);
+    statistics.resetRadios(type);
     products.resetRadios(type);
 };
 
@@ -485,14 +487,14 @@ precipitation.App.prototype.getTimestep = function () {
  * Returns the selected Analysing Method
  * @returns {string}
  */
-precipitation.App.prototype.getCalculation = function () {
-    var container = $('.calculations-container');
+precipitation.App.prototype.getStatistic = function () {
+    var container = $('.statistics-container');
     if (container.length === 0) {
         return 'null';
     } else {
         var id = container.find('input:radio:checked').attr('id');
         if (id === undefined) {
-            console.log('No Calculation selected');
+            console.log('No statistic selected');
             return 'error';
         }
         return id.toLowerCase();
