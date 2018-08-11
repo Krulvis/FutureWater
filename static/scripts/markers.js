@@ -5,13 +5,16 @@ $(function () {
         var tr = $(this).closest('tr');
         var title = tr.find('.title').html();
         console.log('Removing Marker: ' + title);
-        var markers = precipitation.instance.markers;
-        markers.forEach(function (marker) {
-            if (marker.getTitle() === title) {
+        var markers = [];
+        precipitation.instance.markers.forEach(function (marker) {
+            if (marker.getTitle() !== title) {
+                markers.push(marker);
+                console.log("Removed at: " + marker.index);
+            } else {
                 marker.setMap(null);
-                precipitation.instance.markers.splice(marker.index, 1);
             }
         });
+        precipitation.instance.markers = markers;
         tr.remove();
     });
 });
